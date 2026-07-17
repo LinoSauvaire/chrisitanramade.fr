@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Series {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  coverUrl    String?
+  description String?
+  shootDate   DateTime?
+  visibility  String   @default("private") // "public" | "private"
+  tags        String[] @default([])
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  photos Photo[]
+
+  @@map("series")
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  url       String
+  key       String
+  order     Int      @default(0)
+  seriesId  String
+  series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("photos")
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   @default("")
+  excerpt     String?
+  coverUrl    String?
+  coverKey    String?
+  status      String   @default("draft") // "draft" | "published"
+  tags        String[] @default([])
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tickets")
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  name        String   @default("Christian Ramade")
+  bio         String   @default("")
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  timeline TimelineItem[]
+  books    Book[]
+
+  @@map("profiles")
+}
+
+model TimelineItem {
+  id          String   @id @default(cuid())
+  title       String
+  year        String
+  description String?
+  order       Int      @default(0)
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("timeline_items")
+}
+
+model Book {
+  id          String   @id @default(cuid())
+  title       String
+  publisher   String?
+  year        String?
+  description String?
+  coverUrl    String?
+  coverKey    String?
+  order       Int      @default(0)
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("books")
+}
