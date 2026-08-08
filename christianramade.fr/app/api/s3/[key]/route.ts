@@ -26,7 +26,7 @@ export async function GET(
 
     const body = await response.Body!.transformToByteArray()
 
-    return new NextResponse(body, {
+    return new NextResponse(new Uint8Array(body), {
       headers: {
         'Content-Type': response.ContentType ?? 'image/jpeg',
         'Cache-Control': 'public, max-age=31536000, immutable',
