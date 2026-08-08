@@ -1,10 +1,11 @@
 'use client'
 
-import { useActionState, useState, useTransition } from 'react'
+import { useActionState, useState, useTransition, useEffect } from 'react'
 import Image from 'next/image'
-import { Plus, X, Upload, Loader2, BookOpen } from 'lucide-react'
-import { addBook, deleteBook } from '../actions'
+import { Plus, X, Upload, Loader2, BookOpen, GripVertical, Check } from 'lucide-react'
+import { addBook, deleteBook, reorderBooks } from '../actions'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
+import { ConfirmDialog } from '@/app/_components/confirm-dialog'
 
 type Book = {
     id: string
@@ -22,6 +23,18 @@ export function BooksSection({ books }: { books: Book[] }) {
     const [showModal, setShowModal] = useState(false)
     const [coverPreview, setCoverPreview] = useState<string | null>(null)
     const [isDeleting, startTransition] = useTransition()
+    const [localBooks, setLocalBooks] = useState<Book[]>(books)
+    const [draggedId, setDraggedId] = useState<string | null>(null)
+    const [dragOverId, setDragOverId] = useState<string | null>(null)
+    const [orderChanged, setOrderChanged] = useState(false)
+    const [isSavingOrder, startSaveTransition] = useTransition()
+    const [deleteTarget, setDeleteTarget] = useState<Book | null>(null)
+
+    // Resync quand la prop change
+    useEffect(() => {
+        setLocalBooks(books)
+        setOrderChanged(false)
+    }, [books])
 
     function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0]
@@ -30,10 +43,51 @@ export function BooksSection({ books }: { books: Book[] }) {
         }
     }
 
-    function handleDelete(id: string) {
+    function confirmDelete() {
+        if (!deleteTarget) return
         startTransition(async () => {
-            await deleteBook(id)
+            await deleteBook(deleteTarget.id)
+            setDeleteTarget(null)
         })
+    }
+
+    function handleSaveOrder() {
+        startSaveTransition(async () => {
+            await reorderBooks(localBooks.map((b) => b.id))
+            setOrderChanged(false)
+        })
+    }
+
+    function handleDragStart(e: React.DragEvent, bookId: string) {
+        setDraggedId(bookId)
+        e.dataTransfer.effectAllowed = 'move'
+    }
+
+    function handleDragOver(e: React.DragEvent, bookId: string) {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (bookId !== draggedId) setDragOverId(bookId)
+    }
+
+    function handleDrop(e: React.DragEvent, targetId: string) {
+        e.preventDefault()
+        if (!draggedId || draggedId === targetId) {
+            setDraggedId(null)
+            setDragOverId(null)
+            return
+        }
+        setLocalBooks((prev) => {
+            const from = prev.findIndex((b) => b.id === draggedId)
+            const to = prev.findIndex((b) => b.id === targetId)
+            if (from === -1 || to === -1) return prev
+            const updated = [...prev]
+            const [moved] = updated.splice(from, 1)
+            updated.splice(to, 0, moved)
+            return updated
+        })
+        setOrderChanged(true)
+        setDraggedId(null)
+        setDragOverId(null)
     }
 
     function handleClose() {
@@ -48,11 +102,25 @@ export function BooksSection({ books }: { books: Book[] }) {
             </h2>
 
             <div className="space-y-3">
-                {books.map((book) => (
+                {localBooks.map((book) => (
                     <div
                         key={book.id}
-                        className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, book.id)}
+                        onDragOver={(e) => handleDragOver(e, book.id)}
+                        onDragLeave={() => setDragOverId(null)}
+                        onDrop={(e) => handleDrop(e, book.id)}
+                        className={`flex gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-colors ${
+                            dragOverId === book.id
+                                ? 'border-indigo-300 bg-indigo-50/50'
+                                : 'border-gray-100'
+                        } ${draggedId === book.id ? 'opacity-50' : ''}`}
                     >
+                        {/* Poignée de drag */}
+                        <div className="flex cursor-grab items-center text-gray-300 active:cursor-grabbing">
+                            <GripVertical className="h-4 w-4" />
+                        </div>
+
                         {/* Couverture */}
                         <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100">
                             {book.coverUrl ? (
@@ -84,7 +152,7 @@ export function BooksSection({ books }: { books: Book[] }) {
                                     </p>
                                 </div>
                                 <button
-                                    onClick={() => handleDelete(book.id)}
+                                    onClick={() => setDeleteTarget(book)}
                                     disabled={isDeleting}
                                     className="rounded-lg p-1 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500"
                                 >
@@ -238,6 +306,43 @@ export function BooksSection({ books }: { books: Book[] }) {
                     </div>
                 </div>
             )}
+
+            {/* ─────────────────────────── Toast ordre modifié ─────────────────────────── */}
+            {orderChanged && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+                    <div className="flex items-center gap-4 rounded-full border border-gray-200 bg-white py-2.5 pl-5 pr-2.5 shadow-lg">
+                        <span className="text-sm font-medium text-gray-900">
+                            Ordre des livres modifié
+                        </span>
+                        <button
+                            onClick={handleSaveOrder}
+                            disabled={isSavingOrder}
+                            className="flex items-center gap-2 rounded-full bg-[#1F2937] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+                        >
+                            {isSavingOrder ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <Check className="h-3.5 w-3.5" />
+                            )}
+                            Enregistrer l'ordre
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ─────────────────────────── Confirmation suppression ─────────────────────────── */}
+            <ConfirmDialog
+                open={!!deleteTarget}
+                title="Supprimer ce livre ?"
+                message={
+                    deleteTarget
+                        ? `« ${deleteTarget.title} » sera définitivement supprimé. Cette action est irréversible.`
+                        : ''
+                }
+                isPending={isDeleting}
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </section>
     )
 }

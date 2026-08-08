@@ -19,7 +19,7 @@ async function requireAuth() {
 async function getOrCreateProfile() {
   let profile = await prisma.profile.findFirst({
     include: {
-      timeline: { orderBy: { order: 'desc' } },
+      timeline: { orderBy: { year: 'desc' } },
       books: { orderBy: { order: 'asc' } },
     },
   })
@@ -31,7 +31,7 @@ async function getOrCreateProfile() {
         bio: "Spécialisé dans la photographie documentaire au long cours, mon travail s'attache à explorer les mutations sociales et environnementales contemporaines. Privilégiant l'immersion et le temps long, je cherche à construire des récits visuels qui interrogent notre rapport au territoire et aux identités locales.",
       },
       include: {
-        timeline: { orderBy: { order: 'desc' } },
+        timeline: { orderBy: { year: 'desc' } },
         books: { orderBy: { order: 'asc' } },
       },
     })
@@ -57,17 +57,35 @@ export async function updateProfile(prevState: { error?: string } | undefined, f
   try {
     const profile = await getOrCreateProfile()
     const name = String(formData.get('name') ?? '').trim()
+    const tagline = String(formData.get('tagline') ?? '').trim()
     const bio = String(formData.get('bio') ?? '').trim()
+
+    // Upload de la photo de profil (optionnel)
+    const file = formData.get('avatar') as File | null
+    let avatarUrl: string | undefined
+
+    if (file && file.size > 0) {
+      // Supprime l'ancienne photo si elle existe
+      if (profile.avatarUrl) {
+        const oldKey = profile.avatarUrl.match(/\/uploads\/(.+)$/)?.[1]
+        if (oldKey) await deleteFileFromS3(oldKey).catch(() => {})
+      }
+      const { url } = await uploadFileToS3(file)
+      avatarUrl = url
+    }
 
     await prisma.profile.update({
       where: { id: profile.id },
       data: {
         ...(name ? { name } : {}),
+        ...(tagline ? { tagline } : {}),
         bio,
+        ...(avatarUrl ? { avatarUrl } : {}),
       },
     })
 
     revalidatePath('/profil')
+    revalidatePath('/')
     return { error: undefined }
   } catch (err) {
     console.error(err)
@@ -88,6 +106,7 @@ export async function addTimelineItem(prevState: { error?: string } | undefined,
     const title = String(formData.get('title') ?? '').trim()
     const year = String(formData.get('year') ?? '').trim()
     const description = String(formData.get('description') ?? '').trim() || null
+    const location = String(formData.get('location') ?? '').trim() || null
 
     if (!title) return { error: 'Le titre est requis.' }
 
@@ -102,6 +121,7 @@ export async function addTimelineItem(prevState: { error?: string } | undefined,
         title,
         year,
         description,
+        location,
         profileId: profile.id,
         order: (lastItem?.order ?? -1) + 1,
       },
@@ -124,6 +144,7 @@ export async function deleteTimelineItem(id: string) {
   try {
     await prisma.timelineItem.delete({ where: { id } })
     revalidatePath('/profil')
+    revalidatePath('/bio')
     return { error: undefined }
   } catch (err) {
     console.error(err)
@@ -203,10 +224,32 @@ export async function deleteBook(id: string) {
 
     await prisma.book.delete({ where: { id } })
     revalidatePath('/profil')
+    revalidatePath('/bio')
     return { error: undefined }
   } catch (err) {
     console.error(err)
     return { error: 'Erreur lors de la suppression du livre.' }
+  }
+}
+
+/**
+ * Réordonne les livres (drag & drop).
+ */
+export async function reorderBooks(bookIds: string[]) {
+  await requireAuth()
+
+  try {
+    await Promise.all(
+      bookIds.map((id, index) =>
+        prisma.book.update({ where: { id }, data: { order: index } }),
+      ),
+    )
+    revalidatePath('/profil')
+    revalidatePath('/bio')
+    return { error: undefined }
+  } catch (err) {
+    console.error(err)
+    return { error: 'Erreur lors du réordonnancement.' }
   }
 }
 

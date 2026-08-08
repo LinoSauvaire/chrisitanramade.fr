@@ -44,7 +44,7 @@ async function ensureUniqueSlug(base: string, excludeId?: string): Promise<strin
 
 export async function getTickets() {
   return prisma.ticket.findMany({
-    orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+    orderBy: { createdAt: 'desc' },
   })
 }
 

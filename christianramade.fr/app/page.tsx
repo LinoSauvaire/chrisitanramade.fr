@@ -1,65 +1,155 @@
-import Image from "next/image";
+import { prisma } from '@/app/_lib/prisma'
+import Image from 'next/image'
+import { s3UrlToProxy } from '@/app/_lib/s3-url'
+import { formatShootDate } from '@/app/_lib/format-shoot-date'
+import Link from 'next/link'
+import { Navbar } from '@/app/_components/navbar'
+import { Footer } from '@/app/_components/footer'
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+export const dynamic = 'force-dynamic'
+
+export default async function Home() {
+    const [profile, series] = await Promise.all([
+        prisma.profile.findFirst(),
+        prisma.series.findMany({
+            where: { visibility: 'public', featured: true },
+            orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+            include: { _count: { select: { photos: true } } },
+        }),
+    ])
+
+    const name = profile?.name ?? 'Christian Ramade'
+
+    return (
+        <div className="flex min-h-screen flex-col bg-white">
+            <Navbar name={name} active="accueil" />
+
+            <main className="flex-1">
+                {/* ─────────────────────────── Bannière Hero ─────────────────────────── */}
+                <section className="relative h-[70vh] min-h-[500px] w-full overflow-hidden bg-gray-900">
+                    {/* Image de couverture : utilise la première série publique avec une couverture */}
+                    {series.find((s) => s.coverUrl)?.coverUrl ? (
+                        <Image
+                            src={s3UrlToProxy(series.find((s) => s.coverUrl)!.coverUrl!) ?? series.find((s) => s.coverUrl)!.coverUrl!}
+                            alt="Couverture"
+                            fill
+                            className="object-cover opacity-60"
+                            sizes="100vw"
+                            priority
+                        />
+                    ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900" />
+                    )}
+
+                    {/* Superposition textuelle */}
+                    <div className="absolute inset-0 flex items-end">
+                        <div className="mx-auto w-full max-w-6xl px-6 pb-16 lg:px-12">
+                            <h1 className="font-serif text-4xl leading-tight text-white lg:text-5xl">
+                                Capturer les moments de calme
+                            </h1>
+                            <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70">
+                                Une approche photographique explorant la relation entre la lumière, l'espace, l'histoire familiale et l'expérience humaine dans le paysage moderne.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ─────────────────────────── Manifeste ─────────────────────────── */}
+                <section className="mx-auto max-w-3xl px-6 py-24 text-center lg:py-32">
+                    <h2 className="font-serif text-3xl text-gray-900 lg:text-4xl">
+                        La Démarche
+                    </h2>
+                    <p className="mt-6 text-base leading-relaxed text-gray-600">
+                        {profile?.bio || "Une exploration photographique des mutations sociales et environnementales contemporaines, privilégiant l'immersion et le temps long pour construire des récits visuels qui interrogent notre rapport au territoire."}
+                    </p>
+                    <Link
+                        href="/bio"
+                        className="mt-10 inline-block border border-gray-300 px-8 py-3 text-xs uppercase tracking-widest text-gray-900 transition-colors hover:bg-gray-900 hover:text-white"
+                    >
+                        Lire la biographie
+                    </Link>
+                </section>
+
+                {/* ─────────────────────────── Œuvres Sélectionnées ─────────────────────────── */}
+                <section className="mx-auto max-w-6xl px-6 pb-24 lg:px-12">
+                    {/* En-tête de section */}
+                    <div className="mb-10 flex items-end justify-between border-b border-gray-100 pb-4">
+                        <h2 className="font-serif text-2xl text-gray-900 lg:text-3xl">
+                            Œuvres Sélectionnées
+                        </h2>
+                        <Link
+                            href="/archives"
+                            className="text-xs uppercase tracking-widest text-gray-400 transition-colors hover:text-gray-900"
+                        >
+                            Voir les archives
+                        </Link>
+                    </div>
+
+                    {/* Grille */}
+                    {series.length === 0 ? (
+                        <p className="py-20 text-center text-sm text-gray-400">
+                            Aucune œuvre publique pour le moment.
+                        </p>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                            {series.map((s) => (
+                                <Link
+                                    key={s.id}
+                                    href={`/galeries/${s.slug}`}
+                                    className="group"
+                                >
+                                    {/* Image carrée */}
+                                    <div className="relative aspect-square overflow-hidden rounded-sm bg-gray-100">
+                                        {s.coverUrl ? (
+                                            <Image
+                                                src={s3UrlToProxy(s.coverUrl) ?? s.coverUrl}
+                                                alt={s.name}
+                                                fill
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full items-center justify-center">
+                                                <span className="text-sm text-gray-300">Pas de couverture</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Métadonnées */}
+                                    <div className="mt-4">
+                                        {s.tags.length > 0 && (
+                                            <p className="text-xs uppercase tracking-widest text-gray-400">
+                                                {s.tags[0]}
+                                            </p>
+                                        )}
+                                        <h3 className="mt-1 text-sm font-semibold text-gray-900 group-hover:text-gray-600">
+                                            {s.name}
+                                        </h3>
+                                        <p className="mt-0.5 text-xs text-gray-400">
+                                            {s._count.photos} photo{s._count.photos > 1 ? 's' : ''}
+                                            {formatShootDate(s.shootDate, s.shootDateLabel) && (
+                                                <> · {formatShootDate(s.shootDate, s.shootDateLabel)}</>
+                                            )}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Bouton fin de section */}
+                    <div className="mt-16 text-center">
+                        <Link
+                            href="/archives"
+                            className="inline-block border border-gray-300 px-10 py-3.5 text-xs uppercase tracking-widest text-gray-900 transition-colors hover:bg-gray-900 hover:text-white"
+                        >
+                            Voir le portfolio complet
+                        </Link>
+                    </div>
+                </section>
+            </main>
+
+            <Footer name={name} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    )
 }

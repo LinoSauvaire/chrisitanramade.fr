@@ -17,6 +17,7 @@ type TimelineItem = {
     title: string
     year: string
     description: string | null
+    location: string | null
     order: number
 }
 
@@ -34,6 +35,7 @@ type Book = {
 type Profile = {
     id: string
     name: string
+    tagline: string
     bio: string
     avatarUrl: string | null
     timeline: TimelineItem[]
@@ -108,7 +110,9 @@ export function ProfileDashboard({ profile }: { profile: Profile }) {
                         <PresentationSection
                             profileId={profile.id}
                             name={profile.name}
+                            tagline={profile.tagline}
                             bio={profile.bio}
+                            avatarUrl={profile.avatarUrl}
                         />
 
                         <TimelineSection items={profile.timeline} />

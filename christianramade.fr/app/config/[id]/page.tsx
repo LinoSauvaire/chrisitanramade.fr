@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { getSeriesById } from '../actions'
+import { getSeriesById, getPublishedTickets } from '../actions'
 import { EditSeriesDashboard } from './edit-dashboard'
 
 export default async function EditSeriesPage({
@@ -26,7 +26,10 @@ export default async function EditSeriesPage({
         )
     }
 
-    const rawSeries = await getSeriesById(id)
+    const [rawSeries, tickets] = await Promise.all([
+        getSeriesById(id),
+        getPublishedTickets(),
+    ])
 
     if (!rawSeries) {
         notFound()
@@ -39,7 +42,11 @@ export default async function EditSeriesPage({
         description: rawSeries.description ?? null,
         coverUrl: rawSeries.coverUrl ?? null,
         shootDate: rawSeries.shootDate ?? null,
+        shootDateLabel: rawSeries.shootDateLabel ?? null,
+        referenceUrl: rawSeries.referenceUrl ?? null,
+        linkedTicketId: rawSeries.linkedTicketId ?? null,
         visibility: rawSeries.visibility ?? 'private',
+        featured: rawSeries.featured ?? false,
         photos: (rawSeries.photos ?? []).map((p) => ({
             ...p,
             url: p.url ?? '',
@@ -47,5 +54,5 @@ export default async function EditSeriesPage({
         })),
     }
 
-    return <EditSeriesDashboard series={series} />
+    return <EditSeriesDashboard series={series} tickets={tickets} />
 }

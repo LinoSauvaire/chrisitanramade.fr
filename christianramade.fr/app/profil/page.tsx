@@ -25,6 +25,7 @@ export default async function ProfilPage() {
     const normalizedProfile = {
         ...profile,
         name: profile.name ?? '',
+        tagline: profile.tagline ?? '',
         bio: profile.bio ?? '',
         avatarUrl: profile.avatarUrl ?? null,
         timeline: (profile.timeline ?? []).map((t) => ({
@@ -32,6 +33,7 @@ export default async function ProfilPage() {
             title: t.title ?? '',
             year: t.year ?? '',
             description: t.description ?? null,
+            location: t.location ?? null,
         })),
         books: (profile.books ?? []).map((b) => ({
             ...b,

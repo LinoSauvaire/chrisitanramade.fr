@@ -31,6 +31,8 @@ export function TicketSettingsPanel({
     content: string
 }) {
     const [state, formAction, isPending] = useActionState(updateTicket, undefined)
+    const [statut, setStatut] = useState<string>("")
+
     const [coverPreview, setCoverPreview] = useState<string | null>(
         s3UrlToProxy(ticket.coverUrl),
     )
@@ -91,6 +93,9 @@ export function TicketSettingsPanel({
                             id="status"
                             name="status"
                             defaultValue={ticket.status}
+                            onChange={(e) => {
+                                setStatut(e.target.value);
+                            }}
                             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                         >
                             <option value="draft">Brouillon</option>
@@ -171,26 +176,17 @@ export function TicketSettingsPanel({
                         <button
                             type="submit"
                             name="status"
-                            value="draft"
-                            disabled={isPending}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                            Enregistrer le brouillon
-                        </button>
-                        <button
-                            type="submit"
-                            name="status"
-                            value="published"
+                            value=""
                             disabled={isPending}
                             className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
                         >
                             {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                            Publier l'article
+                            Enregistrer
                         </button>
                     </div>
                 </form>
             </div>
         </aside>
+
     )
 }

@@ -13,17 +13,22 @@ datasource db {
 }
 
 model Series {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  coverUrl    String?
-  description String?
-  shootDate   DateTime?
-  visibility  String   @default("private") // "public" | "private"
-  tags        String[] @default([])
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  coverUrl       String?
+  description    String?
+  shootDate      DateTime?
+  shootDateLabel String?
+  referenceUrl   String?
+  linkedTicketId String?
+  linkedTicket   Ticket?  @relation("SeriesLinkedTicket", fields: [linkedTicketId], references: [id], onDelete: SetNull)
+  visibility     String   @default("private") // "public" | "private"
+  featured       Boolean  @default(false)
+  tags           String[] @default([])
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   photos Photo[]
 
@@ -57,12 +62,15 @@ model Ticket {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  linkedSeries Series[] @relation("SeriesLinkedTicket")
+
   @@map("tickets")
 }
 
 model Profile {
   id          String   @id @default(cuid())
   name        String   @default("Christian Ramade")
+  tagline     String   @default("Observing the Unseen.")
   bio         String   @default("")
   avatarUrl   String?
   createdAt   DateTime @default(now())
@@ -79,6 +87,7 @@ model TimelineItem {
   title       String
   year        String
   description String?
+  location    String?
   order       Int      @default(0)
   profileId   String
   profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
@@ -103,4 +112,12 @@ model Book {
   updatedAt   DateTime @updatedAt
 
   @@map("books")
+}
+
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("subscribers")
 }

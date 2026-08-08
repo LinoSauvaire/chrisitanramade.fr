@@ -27,12 +27,21 @@ type Series = {
     coverUrl: string | null
     description: string | null
     shootDate: Date | null
+    shootDateLabel: string | null
+    referenceUrl: string | null
+    linkedTicketId: string | null
     visibility: string
+    featured: boolean
     tags: string[]
     order: number
     createdAt: Date
     updatedAt: Date
     photos: Photo[]
+}
+
+type TicketOption = {
+    id: string
+    title: string
 }
 
 const navItems = [
@@ -41,7 +50,7 @@ const navItems = [
     { label: 'Profil', icon: User, href: '/profil', active: false },
 ]
 
-export function EditSeriesDashboard({ series }: { series: Series }) {
+export function EditSeriesDashboard({ series, tickets }: { series: Series; tickets: TicketOption[] }) {
     return (
         <div className="flex min-h-screen bg-[#FAFAFB]">
             {/* ─────────────────────────── Sidebar gauche ─────────────────────────── */}
@@ -115,7 +124,7 @@ export function EditSeriesDashboard({ series }: { series: Series }) {
             </div>
 
             {/* ─────────────────────────── Panel droite ─────────────────────────── */}
-            <SettingsPanel series={series} />
+            <SettingsPanel series={series} tickets={tickets} />
         </div>
     )
 }

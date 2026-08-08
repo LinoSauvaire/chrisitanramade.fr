@@ -1,7 +1,8 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useState, useEffect } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Upload, Loader2, X, Check } from 'lucide-react'
 import { updateSeries } from '../actions'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
@@ -13,11 +14,20 @@ type Series = {
     coverUrl: string | null
     description: string | null
     shootDate: Date | null
+    shootDateLabel: string | null
+    referenceUrl: string | null
+    linkedTicketId: string | null
     visibility: string
+    featured: boolean
     tags: string[]
     order: number
     createdAt: Date
     updatedAt: Date
+}
+
+type TicketOption = {
+    id: string
+    title: string
 }
 
 function toDateInput(date: Date | null): string {
@@ -29,7 +39,8 @@ function toDateInput(date: Date | null): string {
     return `${year}-${month}-${day}`
 }
 
-export function SettingsPanel({ series }: { series: Series }) {
+export function SettingsPanel({ series, tickets }: { series: Series; tickets: TicketOption[] }) {
+    const router = useRouter()
     const [state, formAction, isPending] = useActionState(updateSeries, undefined)
     const [coverPreview, setCoverPreview] = useState<string | null>(
         s3UrlToProxy(series.coverUrl),
@@ -37,6 +48,32 @@ export function SettingsPanel({ series }: { series: Series }) {
     const [tags, setTags] = useState<string[]>(series.tags ?? [])
     const [tagInput, setTagInput] = useState('')
     const [saved, setSaved] = useState(false)
+    const [featured, setFeatured] = useState<boolean>(series.featured ?? false)
+
+    // Synchronise les tags quand la prop series change (après router.refresh)
+    useEffect(() => {
+        setTags(series.tags ?? [])
+    }, [series.tags])
+
+    // Synchronise l'aperçu de couverture quand la prop change
+    useEffect(() => {
+        setCoverPreview(s3UrlToProxy(series.coverUrl))
+    }, [series.coverUrl])
+
+    // Synchronise le toggle featured quand la prop change
+    useEffect(() => {
+        setFeatured(series.featured ?? false)
+    }, [series.featured])
+
+    // Détecte une sauvegarde réussie → refresh + feedback
+    useEffect(() => {
+        if (state && !state.error) {
+            setSaved(true)
+            router.refresh()
+            const timer = setTimeout(() => setSaved(false), 2500)
+            return () => clearTimeout(timer)
+        }
+    }, [state, router])
 
     function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0]
@@ -72,6 +109,7 @@ export function SettingsPanel({ series }: { series: Series }) {
                 </h2>
 
                 <form
+                    key={String(series.updatedAt)}
                     action={(formData) => {
                         // Injecte les tags comme champ caché
                         formData.set('tags', tags.join(','))
@@ -144,18 +182,48 @@ export function SettingsPanel({ series }: { series: Series }) {
                         />
                     </div>
 
-                    {/* Date de réalisation */}
+                    {/* Date de réalisation (texte libre) */}
                     <div>
-                        <label htmlFor="shootDate" className="mb-1.5 block text-sm font-medium text-gray-700">
+                        <label htmlFor="shootDateLabel" className="mb-1.5 block text-sm font-medium text-gray-700">
                             Date de Réalisation
                         </label>
                         <input
-                            id="shootDate"
-                            name="shootDate"
-                            type="date"
-                            defaultValue={toDateInput(series.shootDate)}
-                            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                            id="shootDateLabel"
+                            name="shootDateLabel"
+                            type="text"
+                            defaultValue={
+                                series.shootDateLabel ??
+                                (series.shootDate ? toDateInput(series.shootDate) : '')
+                            }
+                            placeholder="Ex. 2003-2005, 2025 - en cours…"
+                            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                         />
+                        <p className="mt-1 text-xs text-gray-400">
+                            Texte libre. La première année trouvée sert au tri chronologique.
+                        </p>
+                    </div>
+
+                    {/* Article lié (optionnel) */}
+                    <div>
+                        <label htmlFor="linkedTicketId" className="mb-1.5 block text-sm font-medium text-gray-700">
+                            Article lié <span className="font-normal text-gray-400">(optionnel)</span>
+                        </label>
+                        <select
+                            id="linkedTicketId"
+                            name="linkedTicketId"
+                            defaultValue={series.linkedTicketId ?? ''}
+                            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                        >
+                            <option value="">Aucun</option>
+                            {tickets.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                    {t.title}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="mt-1 text-xs text-gray-400">
+                            Affiche un bouton « Lire l'article » en bas de la galerie.
+                        </p>
                     </div>
 
                     {/* Visibilité */}
@@ -172,6 +240,34 @@ export function SettingsPanel({ series }: { series: Series }) {
                             <option value="public">Publique</option>
                             <option value="private">Privée</option>
                         </select>
+                    </div>
+
+                    {/* Affichage en page d'accueil */}
+                    <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2.5">
+                        <div>
+                            <span className="block text-sm font-medium text-gray-700">
+                                Page d'accueil
+                            </span>
+                            <span className="text-xs text-gray-400">
+                                Afficher dans « Œuvres sélectionnées »
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={featured}
+                            onClick={() => setFeatured((v) => !v)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                                featured ? 'bg-indigo-600' : 'bg-gray-200'
+                            }`}
+                        >
+                            <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                                    featured ? 'translate-x-4' : 'translate-x-0.5'
+                                }`}
+                            />
+                        </button>
+                        <input type="hidden" name="featured" value={featured ? 'on' : 'off'} />
                     </div>
 
                     {/* Tags */}

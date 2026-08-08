@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -11,12 +11,13 @@ import {
     Search,
     MoreHorizontal,
     ImageIcon,
-    Layout as LayoutIcon,
+    GripVertical,
     Check,
     Pencil,
     LogOut,
+    Loader2,
 } from 'lucide-react'
-import { logout, deleteSeries } from './actions'
+import { logout, deleteSeries, reorderSeries } from './actions'
 import { CreateSeriesForm } from './create-series-form'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
 
@@ -47,12 +48,69 @@ function formatDate(date: Date) {
 
 export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
     const [search, setSearch] = useState('')
-    const [orderModified, setOrderModified] = useState(false)
     const [showCreateForm, setShowCreateForm] = useState(false)
+    const [isPending, startTransition] = useTransition()
+    const [localSeries, setLocalSeries] = useState<SeriesItem[]>(series)
+    const [draggedId, setDraggedId] = useState<string | null>(null)
+    const [dragOverId, setDragOverId] = useState<string | null>(null)
 
-    const filteredSeries = series.filter((s) =>
+    const filteredSeries = localSeries.filter((s) =>
         s.name.toLowerCase().includes(search.toLowerCase()),
     )
+
+    const orderChanged = localSeries.some((s, i) => s.id !== series[i]?.id)
+
+    function handleDragStart(e: React.DragEvent, seriesId: string) {
+        setDraggedId(seriesId)
+        e.dataTransfer.effectAllowed = 'move'
+    }
+
+    function handleDragOver(e: React.DragEvent, seriesId: string) {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (seriesId !== draggedId) {
+            setDragOverId(seriesId)
+        }
+    }
+
+    function handleDragLeave() {
+        setDragOverId(null)
+    }
+
+    function handleDrop(e: React.DragEvent, targetId: string) {
+        e.preventDefault()
+        if (!draggedId || draggedId === targetId) {
+            setDraggedId(null)
+            setDragOverId(null)
+            return
+        }
+
+        setLocalSeries((prev) => {
+            const draggedIndex = prev.findIndex((s) => s.id === draggedId)
+            const targetIndex = prev.findIndex((s) => s.id === targetId)
+            if (draggedIndex === -1 || targetIndex === -1) return prev
+
+            const updated = [...prev]
+            const [moved] = updated.splice(draggedIndex, 1)
+            updated.splice(targetIndex, 0, moved)
+            return updated
+        })
+
+        setDraggedId(null)
+        setDragOverId(null)
+    }
+
+    function handleDragEnd() {
+        setDraggedId(null)
+        setDragOverId(null)
+    }
+
+    function handleSaveOrder() {
+        const orderedIds = localSeries.map((s) => s.id)
+        startTransition(async () => {
+            await reorderSeries(orderedIds)
+        })
+    }
 
     return (
         <div className="flex min-h-screen bg-white">
@@ -146,7 +204,19 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
                         {filteredSeries.map((series) => (
                             <div
                                 key={series.id}
-                                className="overflow-hidden rounded-2xl border border-gray-100 bg-white transition-shadow hover:shadow-sm"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, series.id)}
+                                onDragOver={(e) => handleDragOver(e, series.id)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={(e) => handleDrop(e, series.id)}
+                                onDragEnd={handleDragEnd}
+                                className={`overflow-hidden rounded-2xl border bg-white transition-all ${
+                                    draggedId === series.id
+                                        ? 'opacity-40 ring-2 ring-indigo-400'
+                                        : dragOverId === series.id
+                                          ? 'ring-2 ring-indigo-300 border-indigo-200'
+                                          : 'border-gray-100 hover:shadow-sm'
+                                }`}
                             >
                                 {/* Image de couverture */}
                                 <div className="relative aspect-[16/10] bg-gradient-to-br from-gray-100 to-gray-200">
@@ -195,10 +265,10 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
                                         Modifier
                                     </Link>
                                     <button
-                                        onClick={() => deleteSeries(series.id)}
-                                        className="flex w-11 shrink-0 items-center justify-center rounded-lg bg-[#F3F4F6] text-gray-700 transition-colors hover:bg-red-50 hover:text-red-600"
+                                        className="flex w-11 shrink-0 cursor-grab items-center justify-center rounded-lg bg-[#F3F4F6] text-gray-700 transition-colors hover:bg-gray-200 active:cursor-grabbing"
+                                        title="Glisser pour réordonner"
                                     >
-                                        <LayoutIcon className="h-4 w-4" />
+                                        <GripVertical className="h-4 w-4" />
                                     </button>
                                 </div>
                             </div>
@@ -208,17 +278,22 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
             </div>
 
             {/* ─────────────────────────── Toast flottant ─────────────────────────── */}
-            {orderModified && (
+            {orderChanged && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
                     <div className="flex items-center gap-4 rounded-full border border-gray-200 bg-white py-2.5 pl-5 pr-2.5 shadow-lg">
                         <span className="text-sm font-medium text-gray-900">
                             Ordre modifié
                         </span>
                         <button
-                            onClick={() => setOrderModified(false)}
-                            className="flex items-center gap-2 rounded-full bg-[#1F2937] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+                            onClick={handleSaveOrder}
+                            disabled={isPending}
+                            className="flex items-center gap-2 rounded-full bg-[#1F2937] px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
                         >
-                            <Check className="h-3.5 w-3.5" />
+                            {isPending ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <Check className="h-3.5 w-3.5" />
+                            )}
                             Enregistrer l'ordre
                         </button>
                     </div>

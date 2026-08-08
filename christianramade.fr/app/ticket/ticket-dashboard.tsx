@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { createTicket, deleteTicket, logout } from './actions'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
+import { ConfirmDialog } from '@/app/_components/confirm-dialog'
 
 type TicketItem = {
     id: string
@@ -75,8 +76,11 @@ export function TicketDashboard({ tickets }: { tickets: TicketItem[] }) {
     function handleDelete(id: string) {
         startTransition(async () => {
             await deleteTicket(id)
+            setDeleteTarget(null)
         })
     }
+
+    const [deleteTarget, setDeleteTarget] = useState<TicketItem | null>(null)
 
     return (
         <div className="flex min-h-screen bg-white">
@@ -228,7 +232,7 @@ export function TicketDashboard({ tickets }: { tickets: TicketItem[] }) {
                                             Modifier
                                         </Link>
                                         <button
-                                            onClick={() => handleDelete(ticket.id)}
+                                            onClick={() => setDeleteTarget(ticket)}
                                             className="flex w-11 shrink-0 items-center justify-center rounded-lg bg-[#F3F4F6] text-gray-700 transition-colors hover:bg-red-50 hover:text-red-600"
                                         >
                                             <LayoutIcon className="h-4 w-4" />
@@ -258,6 +262,19 @@ export function TicketDashboard({ tickets }: { tickets: TicketItem[] }) {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={!!deleteTarget}
+                title="Supprimer ce ticket ?"
+                message={
+                    deleteTarget
+                        ? `« ${deleteTarget.title} » sera définitivement supprimé. Cette action est irréversible.`
+                        : ''
+                }
+                isPending={isPending}
+                onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </div>
     )
 }

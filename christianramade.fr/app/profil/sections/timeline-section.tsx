@@ -3,12 +3,14 @@
 import { useActionState, useState, useTransition } from 'react'
 import { Plus, X, Loader2 } from 'lucide-react'
 import { addTimelineItem, deleteTimelineItem } from '../actions'
+import { ConfirmDialog } from '@/app/_components/confirm-dialog'
 
 type TimelineItem = {
     id: string
     title: string
     year: string
     description: string | null
+    location: string | null
     order: number
 }
 
@@ -16,10 +18,12 @@ export function TimelineSection({ items }: { items: TimelineItem[] }) {
     const [state, formAction, isPending] = useActionState(addTimelineItem, undefined)
     const [showForm, setShowForm] = useState(false)
     const [isDeleting, startTransition] = useTransition()
+    const [deleteTarget, setDeleteTarget] = useState<TimelineItem | null>(null)
 
     function handleDelete(id: string) {
         startTransition(async () => {
             await deleteTimelineItem(id)
+            setDeleteTarget(null)
         })
     }
 
@@ -57,7 +61,7 @@ export function TimelineSection({ items }: { items: TimelineItem[] }) {
                                             </span>
                                         </div>
                                         <button
-                                            onClick={() => handleDelete(item.id)}
+                                            onClick={() => setDeleteTarget(item)}
                                             disabled={isDeleting}
                                             className="rounded-lg p-1 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500"
                                         >
@@ -104,6 +108,12 @@ export function TimelineSection({ items }: { items: TimelineItem[] }) {
                                 placeholder="Description (optionnel)"
                                 className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                             />
+                            <input
+                                name="location"
+                                type="text"
+                                placeholder="Lieu (ex: Galerie Focale, Nyon)"
+                                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                            />
                             {state?.error && (
                                 <p className="text-sm text-red-500">{state.error}</p>
                             )}
@@ -136,6 +146,19 @@ export function TimelineSection({ items }: { items: TimelineItem[] }) {
                     </button>
                 )}
             </div>
+
+            <ConfirmDialog
+                open={!!deleteTarget}
+                title="Supprimer cet élément ?"
+                message={
+                    deleteTarget
+                        ? `« ${deleteTarget.title} » sera définitivement supprimé du parcours. Cette action est irréversible.`
+                        : ''
+                }
+                isPending={isDeleting}
+                onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </section>
     )
 }

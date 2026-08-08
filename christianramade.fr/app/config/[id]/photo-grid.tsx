@@ -1,10 +1,12 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useRef, useState, useTransition, useEffect } from 'react'
 import Image from 'next/image'
-import { Upload, Trash2, Layers, Loader2, Type } from 'lucide-react'
-import { uploadPhotos, deletePhoto, setCoverPhoto } from '../actions'
+import { useRouter } from 'next/navigation'
+import { Upload, Trash2, Layers, Loader2, GripVertical } from 'lucide-react'
+import { uploadPhotos, deletePhoto, setCoverPhoto, reorderPhotos } from '../actions'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
+import { ConfirmDialog } from '@/app/_components/confirm-dialog'
 
 type Photo = {
     id: string
@@ -22,8 +24,19 @@ export function PhotoGrid({
     photos: Photo[]
 }) {
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [error, setError] = useState<string | null>(null)
+    const [localPhotos, setLocalPhotos] = useState<Photo[]>(photos)
+    const [draggedId, setDraggedId] = useState<string | null>(null)
+    const [dragOverId, setDragOverId] = useState<string | null>(null)
+    const [isFileDragging, setIsFileDragging] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState<Photo | null>(null)
+
+    // Resynchronise les photos locales quand la prop change (après router.refresh)
+    useEffect(() => {
+        setLocalPhotos(photos)
+    }, [photos])
 
     function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
         const files = e.target.files
@@ -39,6 +52,7 @@ export function PhotoGrid({
             const result = await uploadPhotos(undefined, formData)
             if (result?.error) setError(result.error)
             else setError(null)
+            router.refresh()
         })
 
         // Reset pour permettre de re-sélectionner les mêmes fichiers
@@ -48,20 +62,158 @@ export function PhotoGrid({
     function handleDelete(photoId: string) {
         startTransition(async () => {
             await deletePhoto(photoId)
+            setLocalPhotos((prev) => prev.filter((p) => p.id !== photoId))
+            setDeleteTarget(null)
+            router.refresh()
         })
     }
 
     function handleSetCover(photoId: string) {
         startTransition(async () => {
             await setCoverPhoto(photoId)
+            router.refresh()
         })
     }
+
+    function handleDragStart(e: React.DragEvent, photoId: string) {
+        setDraggedId(photoId)
+        e.dataTransfer.effectAllowed = 'move'
+    }
+
+    function handleDragOver(e: React.DragEvent, photoId: string) {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        if (photoId !== draggedId) {
+            setDragOverId(photoId)
+        }
+    }
+
+    function handleDragLeave() {
+        setDragOverId(null)
+    }
+
+    function handleDrop(e: React.DragEvent, targetId: string) {
+        e.preventDefault()
+        if (!draggedId || draggedId === targetId) {
+            setDraggedId(null)
+            setDragOverId(null)
+            return
+        }
+
+        setLocalPhotos((prev) => {
+            const draggedIndex = prev.findIndex((p) => p.id === draggedId)
+            const targetIndex = prev.findIndex((p) => p.id === targetId)
+            if (draggedIndex === -1 || targetIndex === -1) return prev
+
+            const updated = [...prev]
+            const [moved] = updated.splice(draggedIndex, 1)
+            updated.splice(targetIndex, 0, moved)
+            return updated
+        })
+
+        setDraggedId(null)
+        setDragOverId(null)
+    }
+
+    function handleDragEnd() {
+        setDraggedId(null)
+        setDragOverId(null)
+    }
+
+    function handleSaveOrder() {
+        const orderedIds = localPhotos.map((p) => p.id)
+        startTransition(async () => {
+            await reorderPhotos(seriesId, orderedIds)
+            router.refresh()
+        })
+    }
+
+    // ── Drop de fichiers depuis l'ordinateur ──
+
+    function handleFileDragOver(e: React.DragEvent) {
+        // Détecte si ce sont des fichiers (pas un drag interne de photo)
+        if (e.dataTransfer.types.includes('Files')) {
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'copy'
+            setIsFileDragging(true)
+        }
+    }
+
+    function handleFileDragLeave(e: React.DragEvent) {
+        // Ne retire que si on quitte complètement la zone
+        if (e.currentTarget === e.target) {
+            setIsFileDragging(false)
+        }
+    }
+
+    function handleFileDrop(e: React.DragEvent) {
+        if (!e.dataTransfer.files || e.dataTransfer.files.length === 0) return
+        e.preventDefault()
+        setIsFileDragging(false)
+
+        const files = Array.from(e.dataTransfer.files).filter((f) =>
+            f.type.startsWith('image/'),
+        )
+        if (files.length === 0) return
+
+        const formData = new FormData()
+        formData.append('seriesId', seriesId)
+        files.forEach((file) => formData.append('photos', file))
+
+        startTransition(async () => {
+            const result = await uploadPhotos(undefined, formData)
+            if (result?.error) setError(result.error)
+            else setError(null)
+            router.refresh()
+        })
+    }
+
+    const orderChanged = localPhotos.some((p, i) => p.id !== photos[i]?.id)
 
     return (
         <div>
             {error && (
                 <p className="mb-4 text-sm text-red-500">{error}</p>
             )}
+
+            {/* Bouton sauvegarder l'ordre */}
+            {orderChanged && (
+                <div className="mb-4 flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/50 px-4 py-3">
+                    <span className="text-sm font-medium text-indigo-700">
+                        Ordre des photos modifié
+                    </span>
+                    <button
+                        onClick={handleSaveOrder}
+                        disabled={isPending}
+                        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                        {isPending ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : null}
+                        Enregistrer l'ordre
+                    </button>
+                </div>
+            )}
+
+            <div
+                onDragOver={handleFileDragOver}
+                onDragLeave={handleFileDragLeave}
+                onDrop={handleFileDrop}
+                className={`relative rounded-xl transition-all ${
+                    isFileDragging
+                        ? 'ring-2 ring-indigo-400 ring-offset-4 ring-offset-white'
+                        : ''
+                }`}
+            >
+                {/* Overlay pendant le drag de fichiers */}
+                {isFileDragging && (
+                    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-xl bg-indigo-50/90 backdrop-blur-sm">
+                        <Upload className="h-10 w-10 text-indigo-500" />
+                        <span className="text-sm font-medium text-indigo-600">
+                            Déposez vos photos ici
+                        </span>
+                    </div>
+                )}
 
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {/* Case "Ajouter des photos" */}
@@ -93,18 +245,35 @@ export function PhotoGrid({
                 />
 
                 {/* Photos existantes */}
-                {photos.map((photo) => (
+                {localPhotos.map((photo) => (
                     <div
                         key={photo.id}
-                        className="group relative aspect-square overflow-hidden rounded-xl border border-gray-100 bg-gray-100"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, photo.id)}
+                        onDragOver={(e) => handleDragOver(e, photo.id)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, photo.id)}
+                        onDragEnd={handleDragEnd}
+                        className={`group relative aspect-square cursor-grab overflow-hidden rounded-xl border bg-gray-100 transition-all active:cursor-grabbing ${
+                            draggedId === photo.id
+                                ? 'opacity-40 ring-2 ring-indigo-400'
+                                : dragOverId === photo.id
+                                  ? 'ring-2 ring-indigo-300 border-indigo-200'
+                                  : 'border-gray-100'
+                        }`}
                     >
                         <Image
                             src={s3UrlToProxy(photo.url) ?? photo.url}
                             alt=""
                             fill
-                            className="object-cover"
+                            className="pointer-events-none object-cover"
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         />
+
+                        {/* Poignée de glissement */}
+                        <div className="absolute left-1.5 top-1.5 flex items-center justify-center rounded-lg bg-black/40 p-1 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                            <GripVertical className="h-3.5 w-3.5 text-white" />
+                        </div>
 
                         {/* Contrôles au survol */}
                         <div className="absolute inset-0 flex items-start justify-end gap-1.5 bg-black/0 p-2 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
@@ -116,7 +285,7 @@ export function PhotoGrid({
                                 <Layers className="h-3.5 w-3.5" />
                             </button>
                             <button
-                                onClick={() => handleDelete(photo.id)}
+                                onClick={() => setDeleteTarget(photo)}
                                 title="Supprimer"
                                 className="rounded-lg bg-white/90 p-1.5 text-gray-700 shadow-sm transition-colors hover:bg-white hover:text-red-600"
                             >
@@ -126,12 +295,22 @@ export function PhotoGrid({
                     </div>
                 ))}
             </div>
+            </div>
 
-            {photos.length === 0 && !isPending && (
+            {localPhotos.length === 0 && !isPending && (
                 <p className="mt-6 text-center text-sm text-gray-400">
                     Aucune photo dans cette série pour le moment.
                 </p>
             )}
+
+            <ConfirmDialog
+                open={!!deleteTarget}
+                title="Supprimer cette photo ?"
+                message="La photo sera définitivement supprimée de la série. Cette action est irréversible."
+                isPending={isPending}
+                onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </div>
     )
 }

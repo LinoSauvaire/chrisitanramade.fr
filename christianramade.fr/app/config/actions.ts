@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { prisma } from '@/app/_lib/prisma'
 import { uploadFileToS3, deleteFileFromS3 } from '@/app/_lib/S3Uploader'
+import { parseSortDateFromLabel } from '@/app/_lib/format-shoot-date'
 
 /**
  * Server Action : vérifie le mot de passe saisi par l'utilisateur.
@@ -87,6 +88,17 @@ export async function getSeriesById(id: string) {
 }
 
 /**
+ * Récupère les tickets publiés (id + titre) pour le dropdown de liaison.
+ */
+export async function getPublishedTickets() {
+  return prisma.ticket.findMany({
+    where: { status: 'published' },
+    select: { id: true, title: true },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+/**
  * Crée une nouvelle série avec une photo de couverture optionnelle.
  */
 export async function createSeries(prevState: { error?: string } | undefined, formData: FormData) {
@@ -135,9 +147,12 @@ export async function updateSeries(prevState: { error?: string } | undefined, fo
     if (!name) return { error: 'Le nom est requis.' }
 
     const description = String(formData.get('description') ?? '').trim() || null
-    const shootDateStr = String(formData.get('shootDate') ?? '').trim()
-    const shootDate = shootDateStr ? new Date(shootDateStr) : null
+    const shootDateLabel = String(formData.get('shootDateLabel') ?? '').trim() || null
+    const shootDate = shootDateLabel ? parseSortDateFromLabel(shootDateLabel) : null
+    const referenceUrl = String(formData.get('referenceUrl') ?? '').trim() || null
+    const linkedTicketId = String(formData.get('linkedTicketId') ?? '').trim() || null
     const visibility = String(formData.get('visibility') ?? 'private')
+    const featured = formData.get('featured') === 'on'
     const tagsRaw = String(formData.get('tags') ?? '').trim()
     const tags = tagsRaw
       ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
@@ -158,7 +173,11 @@ export async function updateSeries(prevState: { error?: string } | undefined, fo
         slug: slugify(name),
         description,
         shootDate,
+        shootDateLabel,
+        referenceUrl,
+        linkedTicketId,
         visibility,
+        featured,
         tags,
         ...(coverUrl ? { coverUrl } : {}),
       },
@@ -166,7 +185,7 @@ export async function updateSeries(prevState: { error?: string } | undefined, fo
 
     revalidatePath('/config')
     revalidatePath(`/config/${id}`)
-    revalidatePath('/galeries')
+    revalidatePath('/')
     return { error: undefined }
   } catch (err) {
     console.error(err)
@@ -211,10 +230,33 @@ export async function reorderSeries(orderedIds: string[]) {
       ),
     )
     revalidatePath('/config')
+    revalidatePath('/')
     return { error: undefined }
   } catch (err) {
     console.error(err)
     return { error: 'Erreur lors de la réorganisation.' }
+  }
+}
+
+/**
+ * Met à jour l'ordre des photos d'une série.
+ */
+export async function reorderPhotos(seriesId: string, orderedIds: string[]) {
+  await requireAuth()
+
+  try {
+    await Promise.all(
+      orderedIds.map((id, index) =>
+        prisma.photo.update({ where: { id }, data: { order: index } }),
+      ),
+    )
+    revalidatePath('/config')
+    revalidatePath(`/config/${seriesId}`)
+    revalidatePath('/')
+    return { error: undefined }
+  } catch (err) {
+    console.error(err)
+    return { error: 'Erreur lors de la réorganisation des photos.' }
   }
 }
 
@@ -262,7 +304,7 @@ export async function uploadPhotos(prevState: { error?: string } | undefined, fo
 
     revalidatePath('/config')
     revalidatePath(`/config/${seriesId}`)
-    revalidatePath('/galeries')
+    revalidatePath('/')
     return { error: undefined }
   } catch (err) {
     console.error(err)
@@ -285,7 +327,7 @@ export async function deletePhoto(id: string) {
 
     revalidatePath('/config')
     revalidatePath(`/config/${photo.seriesId}`)
-    revalidatePath('/galeries')
+    revalidatePath('/')
     return { error: undefined }
   } catch (err) {
     console.error(err)
@@ -310,7 +352,7 @@ export async function setCoverPhoto(photoId: string) {
 
     revalidatePath('/config')
     revalidatePath(`/config/${photo.seriesId}`)
-    revalidatePath('/galeries')
+    revalidatePath('/')
     return { error: undefined }
   } catch (err) {
     console.error(err)
