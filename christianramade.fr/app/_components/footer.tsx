@@ -9,7 +9,6 @@ export function Footer({ name }: { name: string }) {
     { label: 'Bio', href: '/bio' },
     { label: 'Archives', href: '/archives' },
     { label: 'Blog', href: '/journal' },
-    { label: 'Contact', href: '/#contact' },
     { label: 'Instagram', href: '#' },
   ]
 

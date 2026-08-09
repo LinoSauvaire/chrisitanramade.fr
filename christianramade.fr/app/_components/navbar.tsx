@@ -6,7 +6,6 @@ export function Navbar({ name, active }: { name: string; active?: string }) {
     { label: 'Bio', href: '/bio', key: 'bio' },
     { label: 'Archives', href: '/archives', key: 'archives' },
     { label: 'Blog', href: '/journal', key: 'journal' },
-    { label: 'Contact', href: '/#contact', key: 'contact' },
   ]
 
   return (
