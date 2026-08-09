@@ -34,7 +34,7 @@ export default async function BioPage() {
   const avatarProxy = s3UrlToProxy(profile.avatarUrl)
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-white pt-20">
       <Navbar name={profile.name} active="bio" />
       <main className="flex-1">
         <HeroSection

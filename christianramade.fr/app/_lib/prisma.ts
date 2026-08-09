@@ -6,7 +6,12 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient() {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  // Remplace les alias SSL dépréciés par verify-full explicite
+  const url = (process.env.DATABASE_URL ?? '').replace(
+    /sslmode=(prefer|require|verify-ca)/i,
+    'sslmode=verify-full',
+  )
+  const adapter = new PrismaPg({ connectionString: url })
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],

@@ -37,7 +37,7 @@ export default async function JournalArticlePage({
     const category = ticket.tags[0] ?? 'Note de terrain'
 
     return (
-        <div className="flex min-h-screen flex-col bg-white">
+        <div className="flex min-h-screen flex-col bg-white pt-20">
             <Navbar name={name} active="journal" />
 
             <main className="flex-1">

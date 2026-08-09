@@ -18,7 +18,7 @@ export default async function ArchivesPage() {
     const name = profile?.name ?? 'Christian Ramade'
 
     return (
-        <div className="flex min-h-screen flex-col bg-white">
+        <div className="flex min-h-screen flex-col bg-white pt-20">
             <Navbar name={name} active="archives" />
 
             <main className="flex-1">

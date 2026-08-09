@@ -21,7 +21,7 @@ export default async function Home() {
     const name = profile?.name ?? 'Christian Ramade'
 
     return (
-        <div className="flex min-h-screen flex-col bg-white">
+        <div className="flex min-h-screen flex-col bg-white pt-20">
             <Navbar name={name} active="accueil" />
 
             <main className="flex-1">

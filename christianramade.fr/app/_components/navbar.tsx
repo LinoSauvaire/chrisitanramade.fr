@@ -9,7 +9,7 @@ export function Navbar({ name, active }: { name: string; active?: string }) {
   ]
 
   return (
-    <header className="border-b border-gray-100">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 lg:px-12">
         {/* Logo / Nom */}
         <Link
