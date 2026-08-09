@@ -1,7 +1,8 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useState, useEffect } from 'react'
 import { X, Upload, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { createSeries } from './actions'
 
 type SeriesItem = {
@@ -16,8 +17,17 @@ type SeriesItem = {
 }
 
 export function CreateSeriesForm({ onClose }: { onClose: () => void }) {
+    const router = useRouter()
     const [state, formAction, isPending] = useActionState(createSeries, undefined)
     const [preview, setPreview] = useState<string | null>(null)
+
+    // Ferme la modal et rafraîchit quand la création réussit
+    useEffect(() => {
+        if (!isPending && state && !state.error) {
+            onClose()
+            router.refresh()
+        }
+    }, [isPending, state, onClose, router])
 
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0]
