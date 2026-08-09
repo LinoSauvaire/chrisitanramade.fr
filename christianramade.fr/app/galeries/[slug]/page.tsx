@@ -1,10 +1,9 @@
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronLeft, ArrowRight } from 'lucide-react'
 import { prisma } from '@/app/_lib/prisma'
-import { s3UrlToProxy } from '@/app/_lib/s3-url'
 import { formatShootDate } from '@/app/_lib/format-shoot-date'
+import { GalleryClient } from './gallery-client'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,26 +88,11 @@ export default async function GalerieDetailPage({
                 )}
                 </div>
 
-                {/* Grille de photos */}
+                {/* Grille de photos avec lightbox */}
                 {series.photos.length === 0 ? (
                     <p className="text-gray-400">Aucune photo dans cette galerie.</p>
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {series.photos.map((photo) => (
-                            <div
-                                key={photo.id}
-                                className="relative aspect-[4/3] overflow-hidden bg-gray-100"
-                            >
-                                <Image
-                                    src={s3UrlToProxy(photo.url) ?? photo.url}
-                                    alt={series.name}
-                                    fill
-                                    className="object-cover"
-                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                />
-                            </div>
-                        ))}
-                    </div>
+                    <GalleryClient photos={series.photos} seriesName={series.name} />
                 )}
 
                 {/* Bouton vers l'article lié */}
