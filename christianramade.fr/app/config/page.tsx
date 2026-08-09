@@ -1,7 +1,12 @@
 import { cookies } from 'next/headers'
+import type { Metadata } from 'next'
 import { PasswordForm } from './password-form'
 import { ConfigDashboard } from './config-dashboard'
 import { getSeries } from './actions'
+
+export const metadata: Metadata = {
+    title: 'Christian Ramade — Atelier',
+}
 
 export default async function ConfigPage() {
     const cookieStore = await cookies()
