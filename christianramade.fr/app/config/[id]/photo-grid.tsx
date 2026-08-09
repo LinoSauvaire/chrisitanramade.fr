@@ -49,10 +49,14 @@ export function PhotoGrid({
         })
 
         startTransition(async () => {
-            const result = await uploadPhotos(undefined, formData)
-            if (result?.error) setError(result.error)
-            else setError(null)
-            router.refresh()
+            try {
+                const result = await uploadPhotos(undefined, formData)
+                if (result?.error) setError(result.error)
+                else setError(null)
+                router.refresh()
+            } catch {
+                setError('Erreur lors de l\'upload. Photos trop lourdes ou problème réseau.')
+            }
         })
 
         // Reset pour permettre de re-sélectionner les mêmes fichiers
@@ -161,10 +165,14 @@ export function PhotoGrid({
         files.forEach((file) => formData.append('photos', file))
 
         startTransition(async () => {
-            const result = await uploadPhotos(undefined, formData)
-            if (result?.error) setError(result.error)
-            else setError(null)
-            router.refresh()
+            try {
+                const result = await uploadPhotos(undefined, formData)
+                if (result?.error) setError(result.error)
+                else setError(null)
+                router.refresh()
+            } catch {
+                setError('Erreur lors de l\'upload. Photos trop lourdes ou problème réseau.')
+            }
         })
     }
 

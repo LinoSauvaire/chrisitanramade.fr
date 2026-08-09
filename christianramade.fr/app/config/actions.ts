@@ -266,9 +266,9 @@ export async function reorderPhotos(seriesId: string, orderedIds: string[]) {
  * Upload une ou plusieurs photos et les associe à une série.
  */
 export async function uploadPhotos(prevState: { error?: string } | undefined, formData: FormData) {
-  await requireAuth()
-
   try {
+    await requireAuth()
+
     const seriesId = String(formData.get('seriesId') ?? '')
     if (!seriesId) return { error: 'ID de série manquant.' }
 
