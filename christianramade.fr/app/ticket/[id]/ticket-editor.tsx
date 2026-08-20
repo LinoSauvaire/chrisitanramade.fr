@@ -6,6 +6,7 @@ import {
     LayoutGrid,
     Ticket as TicketIcon,
     User,
+    Home as HomeIcon,
     ChevronRight,
     LogOut,
 } from 'lucide-react'
@@ -32,6 +33,7 @@ const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: false },
     { label: 'Tickets', icon: TicketIcon, href: '/ticket', active: true },
     { label: 'Profil', icon: User, href: '/profil', active: false },
+    { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: false },
 ]
 
 export function TicketEditor({ ticket }: { ticket: Ticket }) {

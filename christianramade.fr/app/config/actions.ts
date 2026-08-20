@@ -152,7 +152,6 @@ export async function updateSeries(prevState: { error?: string } | undefined, fo
     const referenceUrl = String(formData.get('referenceUrl') ?? '').trim() || null
     const linkedTicketId = String(formData.get('linkedTicketId') ?? '').trim() || null
     const visibility = String(formData.get('visibility') ?? 'private')
-    const featured = formData.get('featured') === 'on'
     const tagsRaw = String(formData.get('tags') ?? '').trim()
     const tags = tagsRaw
       ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
@@ -177,7 +176,6 @@ export async function updateSeries(prevState: { error?: string } | undefined, fo
         referenceUrl,
         linkedTicketId,
         visibility,
-        featured,
         tags,
         ...(coverUrl ? { coverUrl } : {}),
       },

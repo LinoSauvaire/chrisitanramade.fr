@@ -18,7 +18,6 @@ type Series = {
     referenceUrl: string | null
     linkedTicketId: string | null
     visibility: string
-    featured: boolean
     tags: string[]
     order: number
     createdAt: Date
@@ -48,7 +47,6 @@ export function SettingsPanel({ series, tickets }: { series: Series; tickets: Ti
     const [tags, setTags] = useState<string[]>(series.tags ?? [])
     const [tagInput, setTagInput] = useState('')
     const [saved, setSaved] = useState(false)
-    const [featured, setFeatured] = useState<boolean>(series.featured ?? false)
 
     // Synchronise les tags quand la prop series change (après router.refresh)
     useEffect(() => {
@@ -59,11 +57,6 @@ export function SettingsPanel({ series, tickets }: { series: Series; tickets: Ti
     useEffect(() => {
         setCoverPreview(s3UrlToProxy(series.coverUrl))
     }, [series.coverUrl])
-
-    // Synchronise le toggle featured quand la prop change
-    useEffect(() => {
-        setFeatured(series.featured ?? false)
-    }, [series.featured])
 
     // Détecte une sauvegarde réussie → refresh + feedback
     useEffect(() => {
@@ -240,34 +233,6 @@ export function SettingsPanel({ series, tickets }: { series: Series; tickets: Ti
                             <option value="public">Publique</option>
                             <option value="private">Privée</option>
                         </select>
-                    </div>
-
-                    {/* Affichage en page d'accueil */}
-                    <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2.5">
-                        <div>
-                            <span className="block text-sm font-medium text-gray-700">
-                                Page d'accueil
-                            </span>
-                            <span className="text-xs text-gray-400">
-                                Afficher dans « Œuvres sélectionnées »
-                            </span>
-                        </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={featured}
-                            onClick={() => setFeatured((v) => !v)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                                featured ? 'bg-indigo-600' : 'bg-gray-200'
-                            }`}
-                        >
-                            <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                                    featured ? 'translate-x-4' : 'translate-x-0.5'
-                                }`}
-                            />
-                        </button>
-                        <input type="hidden" name="featured" value={featured ? 'on' : 'off'} />
                     </div>
 
                     {/* Tags */}

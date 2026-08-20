@@ -7,6 +7,7 @@ import {
     LayoutGrid,
     Ticket,
     User,
+    Home as HomeIcon,
     Plus,
     Search,
     MoreHorizontal,
@@ -36,6 +37,7 @@ const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: true },
     { label: 'Tickets', icon: Ticket, href: '/ticket', active: false },
     { label: 'Profil', icon: User, href: '/profil', active: false },
+    { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: false },
 ]
 
 function formatDate(date: Date) {

@@ -31,6 +31,7 @@ model Series {
   updatedAt      DateTime @updatedAt
 
   photos Photo[]
+  featuredWorks FeaturedWork[]
 
   @@map("series")
 }
@@ -120,4 +121,33 @@ model Subscriber {
   createdAt DateTime @default(now())
 
   @@map("subscribers")
+}
+
+model Homepage {
+  id            String   @id @default(cuid())
+  heroImageUrl  String?
+  heroImageKey  String?
+  heroText      String   @default("")
+  presentation  String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  featuredWorks FeaturedWork[]
+
+  @@map("homepages")
+}
+
+model FeaturedWork {
+  id         String   @id @default(cuid())
+  url        String
+  key        String
+  order      Int      @default(0)
+  homepageId String
+  homepage   Homepage @relation(fields: [homepageId], references: [id], onDelete: Cascade)
+  seriesId   String?
+  series     Series?  @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("featured_works")
 }

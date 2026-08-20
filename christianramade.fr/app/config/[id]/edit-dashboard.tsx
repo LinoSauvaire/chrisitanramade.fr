@@ -5,6 +5,7 @@ import {
     LayoutGrid,
     Ticket,
     User,
+    Home as HomeIcon,
     ChevronRight,
     LogOut,
 } from 'lucide-react'
@@ -31,7 +32,6 @@ type Series = {
     referenceUrl: string | null
     linkedTicketId: string | null
     visibility: string
-    featured: boolean
     tags: string[]
     order: number
     createdAt: Date
@@ -48,6 +48,7 @@ const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: true },
     { label: 'Tickets', icon: Ticket, href: '/ticket', active: false },
     { label: 'Profil', icon: User, href: '/profil', active: false },
+    { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: false },
 ]
 
 export function EditSeriesDashboard({ series, tickets }: { series: Series; tickets: TicketOption[] }) {

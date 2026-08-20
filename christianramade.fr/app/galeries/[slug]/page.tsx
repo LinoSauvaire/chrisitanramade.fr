@@ -38,7 +38,7 @@ export default async function GalerieDetailPage({
             <div className="mx-auto max-w-7xl px-6 py-16">
                 {/* Retour */}
                 <Link
-                    href="/"
+                    href="/archives"
                     className="mb-8 inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900"
                 >
                     <ChevronLeft className="h-4 w-4" />

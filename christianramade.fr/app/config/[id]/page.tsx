@@ -46,7 +46,6 @@ export default async function EditSeriesPage({
         referenceUrl: rawSeries.referenceUrl ?? null,
         linkedTicketId: rawSeries.linkedTicketId ?? null,
         visibility: rawSeries.visibility ?? 'private',
-        featured: rawSeries.featured ?? false,
         photos: (rawSeries.photos ?? []).map((p) => ({
             ...p,
             url: p.url ?? '',

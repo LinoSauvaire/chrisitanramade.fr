@@ -9,8 +9,28 @@ import { Footer } from '@/app/_components/footer'
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-    const [profile, series] = await Promise.all([
+    const [profile, homepage, series] = await Promise.all([
         prisma.profile.findFirst(),
+        prisma.homepage.findFirst({
+            include: {
+                featuredWorks: {
+                    orderBy: { order: 'asc' },
+                    include: {
+                        series: {
+                            select: {
+                                slug: true,
+                                name: true,
+                                description: true,
+                                shootDate: true,
+                                shootDateLabel: true,
+                                tags: true,
+                                _count: { select: { photos: true } },
+                            },
+                        },
+                    },
+                },
+            },
+        }),
         prisma.series.findMany({
             where: { visibility: 'public', featured: true },
             orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
@@ -19,6 +39,13 @@ export default async function Home() {
     ])
 
     const name = profile?.name ?? 'Christian Ramade'
+    const heroImageUrl = homepage?.heroImageUrl ?? null
+    const heroText = homepage?.heroText || 'Capturer les moments de calme'
+    const presentation =
+        homepage?.presentation ||
+        profile?.bio ||
+        "Une exploration photographique des mutations sociales et environnementales contemporaines, privilégiant l'immersion et le temps long pour construire des récits visuels qui interrogent notre rapport au territoire."
+    const featuredWorks = homepage?.featuredWorks ?? []
 
     return (
         <div className="flex min-h-screen flex-col bg-white pt-20">
@@ -27,11 +54,11 @@ export default async function Home() {
             <main className="flex-1">
                 {/* ─────────────────────────── Bannière Hero ─────────────────────────── */}
                 <section className="relative h-[70vh] min-h-[500px] w-full overflow-hidden bg-gray-900">
-                    {/* Image de couverture : utilise la première série publique avec une couverture */}
-                    {series.find((s) => s.coverUrl)?.coverUrl ? (
+                    {/* Image de couverture : photo principale configurée dans /config/accueil */}
+                    {heroImageUrl ? (
                         <Image
-                            src={s3UrlToProxy(series.find((s) => s.coverUrl)!.coverUrl!) ?? series.find((s) => s.coverUrl)!.coverUrl!}
-                            alt="Couverture"
+                            src={s3UrlToProxy(heroImageUrl) ?? heroImageUrl}
+                            alt="Photo principale"
                             fill
                             className="object-cover opacity-60"
                             sizes="100vw"
@@ -45,7 +72,7 @@ export default async function Home() {
                     <div className="absolute inset-0 flex items-end">
                         <div className="mx-auto w-full max-w-6xl px-6 pb-16 lg:px-12">
                             <h1 className="font-serif text-4xl leading-tight text-white lg:text-5xl">
-                                Capturer les moments de calme
+                                {heroText}
                             </h1>
                             <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70">
                                 Une approche photographique explorant la relation entre la lumière, l'espace, l'histoire familiale et l'expérience humaine dans le paysage moderne.
@@ -60,7 +87,7 @@ export default async function Home() {
                         La Démarche
                     </h2>
                     <p className="mt-6 text-base leading-relaxed text-gray-600">
-                        {profile?.bio || "Une exploration photographique des mutations sociales et environnementales contemporaines, privilégiant l'immersion et le temps long pour construire des récits visuels qui interrogent notre rapport au territoire."}
+                        {presentation}
                     </p>
                     <Link
                         href="/bio"
@@ -85,8 +112,62 @@ export default async function Home() {
                         </Link>
                     </div>
 
-                    {/* Grille */}
-                    {series.length === 0 ? (
+                    {/* Grille : œuvres majeures configurées, sinon séries en vedette */}
+                    {featuredWorks.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                            {featuredWorks.map((work) => {
+                                const s = work.series
+                                const href = s?.slug ? `/galeries/${s.slug}` : null
+                                const image = (
+                                    <div className="relative aspect-square overflow-hidden rounded-sm bg-gray-100">
+                                        <Image
+                                            src={s3UrlToProxy(work.url) ?? work.url}
+                                            alt={s?.name ?? 'Œuvre majeure'}
+                                            fill
+                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                        />
+                                    </div>
+                                )
+                                const meta = (
+                                    <div className="mt-4">
+                                        {s && s.tags.length > 0 && (
+                                            <p className="text-xs uppercase tracking-widest text-gray-400">
+                                                {s.tags[0]}
+                                            </p>
+                                        )}
+                                        <h3 className="mt-1 text-sm font-semibold text-gray-900 group-hover:text-gray-600">
+                                            {s?.name ?? 'Œuvre majeure'}
+                                        </h3>
+                                        {s?.description && (
+                                            <p className="mt-1 text-xs leading-relaxed text-gray-500 line-clamp-2">
+                                                {s.description}
+                                            </p>
+                                        )}
+                                        {s && (
+                                            <p className="mt-0.5 text-xs text-gray-400">
+                                                {s._count.photos} photo{s._count.photos > 1 ? 's' : ''}
+                                                {formatShootDate(s.shootDate, s.shootDateLabel) && (
+                                                    <> · {formatShootDate(s.shootDate, s.shootDateLabel)}</>
+                                                )}
+                                            </p>
+                                        )}
+                                    </div>
+                                )
+                                return href ? (
+                                    <Link key={work.id} href={href} className="group">
+                                        {image}
+                                        {meta}
+                                    </Link>
+                                ) : (
+                                    <div key={work.id} className="group">
+                                        {image}
+                                        {meta}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : series.length === 0 ? (
                         <p className="py-20 text-center text-sm text-gray-400">
                             Aucune œuvre publique pour le moment.
                         </p>

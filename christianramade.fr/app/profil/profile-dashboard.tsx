@@ -5,6 +5,7 @@ import {
     LayoutGrid,
     Ticket as TicketIcon,
     User,
+    Home as HomeIcon,
     LogOut,
 } from 'lucide-react'
 import { logout } from './actions'
@@ -46,6 +47,7 @@ const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: false },
     { label: 'Tickets', icon: TicketIcon, href: '/ticket', active: false },
     { label: 'Profil', icon: User, href: '/profil', active: true },
+    { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: false },
 ]
 
 export function ProfileDashboard({ profile }: { profile: Profile }) {
