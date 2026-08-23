@@ -1,0 +1,58 @@
+# ─────────────────────────────────────────────────────────────
+# docker-compose.production.yml — christianramade.fr (VPS)
+# Deux services : application Next.js + PostgreSQL privé.
+# Aucun secret dans ce fichier : tout vient de .env.production
+# (fichier local au VPS, jamais versionné).
+#
+# Usage :
+#   docker compose -f docker-compose.production.yml up -d
+# ─────────────────────────────────────────────────────────────
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: christianramade-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Aucun port publié : PostgreSQL n'est accessible que via le
+    # réseau Docker interne (service `db`).
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: christianramade-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL}
+      S3_REGION: ${S3_REGION}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      S3_PUBLIC_ACCES_KEY: ${S3_PUBLIC_ACCES_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      CONFIG_PASSWORD: ${CONFIG_PASSWORD}
+      CONTACT_EMAIL: ${CONTACT_EMAIL}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL}
+      NEWSLETTER_CRON_SECRET: ${NEWSLETTER_CRON_SECRET}
+    # Port exposé uniquement au reverse proxy local (nginx).
+    # Ne pas exposer 3000 directement sur Internet.
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  postgres_data:

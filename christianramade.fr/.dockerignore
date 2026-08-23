@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────────────────────────
+# .dockerignore — fichiers exclus du contexte de build Docker
+# Ne JAMAIS embarquer les fichiers .env dans l'image.
+# ─────────────────────────────────────────────────────────────
+
+# Dépendances et caches
+node_modules
+.next
+dist
+build
+npm-debug.log*
+
+# Contrôle de version
+.git
+.gitignore
+.gitattributes
+
+# Fichiers d'environnement (secrets) — jamais embarqués
+.env
+.env.*
+!.env.example
+
+# Fichiers locaux et temporaires
+*.local
+*.local.*
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs et fichiers temporaires
+*.log
+*.tmp
+*.temp
+*.cache
+*.pid
+*.seed
+*.pid.lock
+tmp/
+temp/

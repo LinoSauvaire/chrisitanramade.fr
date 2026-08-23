@@ -1,12 +1,18 @@
+# ─────────────────────────────────────────────────────────────
+# docker-compose.yml — développement local uniquement.
+# Pour la production sur VPS, utiliser docker-compose.production.yml.
+# Aucun secret : les valeurs viennent de votre fichier .env local.
+# ─────────────────────────────────────────────────────────────
+
 services:
   postgres:
     image: postgres:17-alpine
     container_name: christianramade-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: christian
-      POSTGRES_PASSWORD: christian
-      POSTGRES_DB: christianramade
+      POSTGRES_USER: ${POSTGRES_USER:-christian}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-christian}
+      POSTGRES_DB: ${POSTGRES_DB:-christianramade}
     ports:
       - "5432:5432"
     volumes:
