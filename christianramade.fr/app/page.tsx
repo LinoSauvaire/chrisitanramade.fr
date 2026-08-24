@@ -41,6 +41,7 @@ export default async function Home() {
     const name = profile?.name ?? 'Christian Ramade'
     const heroImageUrl = homepage?.heroImageUrl ?? null
     const heroText = homepage?.heroText || 'Capturer les moments de calme'
+    const manifestoTitle = homepage?.manifestoTitle || 'La Démarche'
     const presentation =
         homepage?.presentation ||
         profile?.bio ||
@@ -84,7 +85,7 @@ export default async function Home() {
                 {/* ─────────────────────────── Manifeste ─────────────────────────── */}
                 <section className="mx-auto max-w-3xl px-6 py-24 text-center lg:py-32">
                     <h2 className="font-serif text-3xl text-gray-900 lg:text-4xl">
-                        {homepage.manifestoTitle || 'La Démarche'}
+                        {manifestoTitle}
                     </h2>
                     <p className="mt-6 text-base leading-relaxed text-gray-600">
                         {presentation}
