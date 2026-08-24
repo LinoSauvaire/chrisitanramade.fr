@@ -7,7 +7,7 @@ export function Footer({ name }: { name: string }) {
   const socialLinks = [
     { label: 'Accueil', href: '/' },
     { label: 'Bio', href: '/bio' },
-    { label: 'Archives', href: '/archives' },
+    { label: 'Galeries', href: '/archives' },
     { label: 'Blog', href: '/journal' },
     { label: 'Instagram', href: '#' },
   ]

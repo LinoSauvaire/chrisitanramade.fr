@@ -25,7 +25,7 @@ export default async function ArchivesPage() {
                 {/* En-tête */}
                 <div className="mx-auto max-w-3xl px-6 py-20 text-center lg:py-28">
                     <h1 className="font-serif text-4xl text-gray-900 lg:text-5xl">
-                        Archives
+                        Galeries
                     </h1>
                     <p className="mt-4 text-base leading-relaxed text-gray-500">
                         Explorez une collection complète d'études structurelles et de séries d'observation couvrant deux décennies de pratique.

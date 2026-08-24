@@ -84,7 +84,7 @@ export default async function Home() {
                 {/* ─────────────────────────── Manifeste ─────────────────────────── */}
                 <section className="mx-auto max-w-3xl px-6 py-24 text-center lg:py-32">
                     <h2 className="font-serif text-3xl text-gray-900 lg:text-4xl">
-                        La Démarche
+                        {homepage.manifestoTitle || 'La Démarche'}
                     </h2>
                     <p className="mt-6 text-base leading-relaxed text-gray-600">
                         {presentation}
@@ -108,7 +108,7 @@ export default async function Home() {
                             href="/archives"
                             className="text-xs uppercase tracking-widest text-gray-400 transition-colors hover:text-gray-900"
                         >
-                            Voir les archives
+                            Voir la galeries
                         </Link>
                     </div>
 

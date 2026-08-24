@@ -4,7 +4,7 @@ import { useRef, useState, useTransition, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Upload, Trash2, Layers, Loader2, GripVertical } from 'lucide-react'
-import { uploadPhotos, deletePhoto, setCoverPhoto, reorderPhotos } from '../actions'
+import { uploadPhotos, deletePhoto, deleteAllPhotos, setCoverPhoto, reorderPhotos } from '../actions'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
 import { ConfirmDialog } from '@/app/_components/confirm-dialog'
 
@@ -32,6 +32,7 @@ export function PhotoGrid({
     const [dragOverId, setDragOverId] = useState<string | null>(null)
     const [isFileDragging, setIsFileDragging] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<Photo | null>(null)
+    const [confirmDeleteAll, setConfirmDeleteAll] = useState(false)
 
     // Resynchronise les photos locales quand la prop change (après router.refresh)
     useEffect(() => {
@@ -68,6 +69,15 @@ export function PhotoGrid({
             await deletePhoto(photoId)
             setLocalPhotos((prev) => prev.filter((p) => p.id !== photoId))
             setDeleteTarget(null)
+            router.refresh()
+        })
+    }
+
+    function handleDeleteAll() {
+        startTransition(async () => {
+            await deleteAllPhotos(seriesId)
+            setLocalPhotos([])
+            setConfirmDeleteAll(false)
             router.refresh()
         })
     }
@@ -203,6 +213,23 @@ export function PhotoGrid({
                 </div>
             )}
 
+            {/* Barre d'actions : supprimer toutes les photos */}
+            {localPhotos.length > 0 && (
+                <div className="mb-4 flex items-center justify-between">
+                    <span className="text-sm text-gray-500">
+                        {localPhotos.length} photo{localPhotos.length > 1 ? 's' : ''}
+                    </span>
+                    <button
+                        onClick={() => setConfirmDeleteAll(true)}
+                        disabled={isPending}
+                        className="flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Tout supprimer
+                    </button>
+                </div>
+            )}
+
             <div
                 onDragOver={handleFileDragOver}
                 onDragLeave={handleFileDragLeave}
@@ -318,6 +345,16 @@ export function PhotoGrid({
                 isPending={isPending}
                 onConfirm={() => deleteTarget && handleDelete(deleteTarget.id)}
                 onCancel={() => setDeleteTarget(null)}
+            />
+
+            <ConfirmDialog
+                open={confirmDeleteAll}
+                title="Supprimer toutes les photos ?"
+                message={`Les ${localPhotos.length} photos de cette série seront définitivement supprimées. Cette action est irréversible.`}
+                confirmLabel="Tout supprimer"
+                isPending={isPending}
+                onConfirm={handleDeleteAll}
+                onCancel={() => setConfirmDeleteAll(false)}
             />
         </div>
     )

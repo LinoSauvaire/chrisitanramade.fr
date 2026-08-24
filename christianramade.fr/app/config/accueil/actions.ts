@@ -135,7 +135,7 @@ export async function deleteHeroImage() {
 // ─────────────────────────── Présentation ───────────────────────────
 
 /**
- * Met à jour le texte de présentation.
+ * Met à jour le texte de présentation et le titre du manifeste (slogan).
  */
 export async function updatePresentation(
   prevState: { error?: string } | undefined,
@@ -146,10 +146,14 @@ export async function updatePresentation(
   try {
     const homepage = await getOrCreateHomepage()
     const presentation = String(formData.get('presentation') ?? '').trim()
+    const manifestoTitle = String(formData.get('manifestoTitle') ?? '').trim()
 
     await prisma.homepage.update({
       where: { id: homepage.id },
-      data: { presentation },
+      data: {
+        presentation,
+        ...(manifestoTitle ? { manifestoTitle } : {}),
+      },
     })
 
     revalidatePath('/config/accueil')

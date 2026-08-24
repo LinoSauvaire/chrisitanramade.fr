@@ -119,6 +119,7 @@ export function RichTextEditor({
                 onInput={handleInput}
                 className="min-h-[400px] px-8 py-6 text-base leading-relaxed text-gray-700 focus:outline-none [&_a]:text-indigo-600 [&_a]:underline [&_img]:max-w-full [&_img]:rounded-lg [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6"
                 data-placeholder="Commencez d'écrire votre histoire..."
+                dangerouslySetInnerHTML={{ __html: content }}
             />
         </div>
     )

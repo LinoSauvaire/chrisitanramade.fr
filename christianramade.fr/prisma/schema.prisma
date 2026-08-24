@@ -129,6 +129,7 @@ model Homepage {
   heroImageKey  String?
   heroText      String   @default("")
   presentation  String   @default("")
+  manifestoTitle String  @default("La Démarche")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

@@ -21,11 +21,11 @@ export function CreateSeriesForm({ onClose }: { onClose: () => void }) {
     const [state, formAction, isPending] = useActionState(createSeries, undefined)
     const [preview, setPreview] = useState<string | null>(null)
 
-    // Ferme la modal et rafraîchit quand la création réussit
+    // Ferme la modal et redirige vers la série créée quand la création réussit
     useEffect(() => {
-        if (!isPending && state && !state.error) {
+        if (!isPending && state && !state.error && state.seriesId) {
             onClose()
-            router.refresh()
+            router.push(`/config/${state.seriesId}`)
         }
     }, [isPending, state, onClose, router])
 

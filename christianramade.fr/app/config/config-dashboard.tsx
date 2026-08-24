@@ -17,9 +17,11 @@ import {
     Pencil,
     LogOut,
     Loader2,
+    Trash2,
 } from 'lucide-react'
 import { logout, deleteSeries, reorderSeries } from './actions'
 import { CreateSeriesForm } from './create-series-form'
+import { ConfirmDialog } from '@/app/_components/confirm-dialog'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
 
 type SeriesItem = {
@@ -55,6 +57,8 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
     const [localSeries, setLocalSeries] = useState<SeriesItem[]>(series)
     const [draggedId, setDraggedId] = useState<string | null>(null)
     const [dragOverId, setDragOverId] = useState<string | null>(null)
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+    const [deleteTarget, setDeleteTarget] = useState<SeriesItem | null>(null)
 
     const filteredSeries = localSeries.filter((s) =>
         s.name.toLowerCase().includes(search.toLowerCase()),
@@ -105,6 +109,17 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
     function handleDragEnd() {
         setDraggedId(null)
         setDragOverId(null)
+    }
+
+    function handleDelete() {
+        if (!deleteTarget) return
+        startTransition(async () => {
+            const res = await deleteSeries(deleteTarget.id)
+            if (!res.error) {
+                setLocalSeries((prev) => prev.filter((s) => s.id !== deleteTarget.id))
+            }
+            setDeleteTarget(null)
+        })
     }
 
     function handleSaveOrder() {
@@ -236,9 +251,30 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
                                         </div>
                                     )}
                                     {/* Trois points en haut à droite */}
-                                    <button className="absolute right-3 top-3 flex items-center gap-0.5 rounded-full bg-black/20 px-2 py-1 backdrop-blur-sm">
-                                        <MoreHorizontal className="h-4 w-4 text-white" />
-                                    </button>
+                                    <div className="absolute right-3 top-3">
+                                        <button
+                                            onClick={() =>
+                                                setOpenMenuId(openMenuId === series.id ? null : series.id)
+                                            }
+                                            className="flex items-center gap-0.5 rounded-full bg-black/20 px-2 py-1 backdrop-blur-sm"
+                                        >
+                                            <MoreHorizontal className="h-4 w-4 text-white" />
+                                        </button>
+                                        {openMenuId === series.id && (
+                                            <div className="absolute right-0 top-9 z-20 min-w-40 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
+                                                <button
+                                                    onClick={() => {
+                                                        setOpenMenuId(null)
+                                                        setDeleteTarget(series)
+                                                    }}
+                                                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                    Supprimer
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Métadonnées */}
@@ -306,6 +342,16 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
             {showCreateForm && (
                 <CreateSeriesForm onClose={() => setShowCreateForm(false)} />
             )}
+
+            {/* ─────────────────────────── Confirmation de suppression ─────────────────────────── */}
+            <ConfirmDialog
+                open={!!deleteTarget}
+                title="Supprimer cette série ?"
+                message={`La série « ${deleteTarget?.name} » et toutes ses photos seront définitivement supprimées.`}
+                isPending={isPending}
+                onConfirm={handleDelete}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </div>
     )
 }

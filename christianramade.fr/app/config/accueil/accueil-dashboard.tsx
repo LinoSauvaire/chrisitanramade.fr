@@ -53,6 +53,7 @@ type Homepage = {
     heroImageKey: string | null
     heroText: string
     presentation: string
+    manifestoTitle: string
     featuredWorks: FeaturedWork[]
 }
 
@@ -87,9 +88,11 @@ export function AccueilDashboard({
 
     // ── Présentation ──
     const [presentation, setPresentation] = useState(homepage.presentation)
+    const [manifestoTitle, setManifestoTitle] = useState(homepage.manifestoTitle)
     const [presentationError, setPresentationError] = useState<string | null>(null)
     const [presentationSaving, setPresentationSaving] = useState(false)
-    const presentationChanged = presentation !== homepage.presentation
+    const presentationChanged =
+        presentation !== homepage.presentation || manifestoTitle !== homepage.manifestoTitle
 
     // ── Œuvres majeures ──
     const [localWorks, setLocalWorks] = useState<FeaturedWork[]>(homepage.featuredWorks)
@@ -164,6 +167,7 @@ export function AccueilDashboard({
         setPresentationError(null)
         const formData = new FormData()
         formData.set('presentation', presentation)
+        formData.set('manifestoTitle', manifestoTitle)
 
         startTransition(async () => {
             try {
@@ -181,6 +185,7 @@ export function AccueilDashboard({
 
     function handlePresentationCancel() {
         setPresentation(homepage.presentation)
+        setManifestoTitle(homepage.manifestoTitle)
         setPresentationError(null)
     }
 
@@ -377,6 +382,17 @@ export function AccueilDashboard({
                             </h2>
 
                             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                    Titre de la section (slogan)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={manifestoTitle}
+                                    onChange={(e) => setManifestoTitle(e.target.value)}
+                                    placeholder="Ex : La Démarche"
+                                    className="mb-4 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                />
+
                                 <label className="mb-1.5 block text-sm font-medium text-gray-700">
                                     Texte de présentation
                                 </label>

@@ -118,7 +118,7 @@ export async function createSeries(prevState: { error?: string } | undefined, fo
 
     const slug = slugify(name)
 
-    await prisma.series.create({
+    const series = await prisma.series.create({
       data: {
         name,
         slug,
@@ -127,7 +127,7 @@ export async function createSeries(prevState: { error?: string } | undefined, fo
     })
 
     revalidatePath('/config')
-    return { error: undefined }
+    return { error: undefined, seriesId: series.id }
   } catch (err) {
     console.error(err)
     return { error: 'Erreur lors de la création de la série.' }
@@ -330,6 +330,32 @@ export async function deletePhoto(id: string) {
   } catch (err) {
     console.error(err)
     return { error: 'Erreur lors de la suppression de la photo.' }
+  }
+}
+
+/**
+ * Supprime toutes les photos d'une série (S3 + BDD).
+ */
+export async function deleteAllPhotos(seriesId: string) {
+  await requireAuth()
+
+  try {
+    const photos = await prisma.photo.findMany({
+      where: { seriesId },
+      select: { key: true },
+    })
+
+    await Promise.all(photos.map((p) => deleteFileFromS3(p.key).catch(() => {})))
+
+    await prisma.photo.deleteMany({ where: { seriesId } })
+
+    revalidatePath('/config')
+    revalidatePath(`/config/${seriesId}`)
+    revalidatePath('/')
+    return { error: undefined }
+  } catch (err) {
+    console.error(err)
+    return { error: 'Erreur lors de la suppression des photos.' }
   }
 }
 

@@ -4,6 +4,9 @@ import { ChevronLeft, ArrowRight } from 'lucide-react'
 import { prisma } from '@/app/_lib/prisma'
 import { formatShootDate } from '@/app/_lib/format-shoot-date'
 import { GalleryClient } from './gallery-client'
+import { SeriesDescription } from './series-description'
+import { Navbar } from '@/app/_components/navbar'
+import { Footer } from '@/app/_components/footer'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,19 +17,24 @@ export default async function GalerieDetailPage({
 }) {
     const { slug } = await params
 
-    const series = await prisma.series.findUnique({
-        where: { slug },
-        include: {
-            photos: { orderBy: { order: 'asc' } },
-            linkedTicket: {
-                select: { id: true, title: true, slug: true, status: true },
+    const [profile, series] = await Promise.all([
+        prisma.profile.findFirst(),
+        prisma.series.findUnique({
+            where: { slug },
+            include: {
+                photos: { orderBy: { order: 'asc' } },
+                linkedTicket: {
+                    select: { id: true, title: true, slug: true, status: true },
+                },
             },
-        },
-    })
+        }),
+    ])
 
     if (!series || series.visibility !== 'public') {
         notFound()
     }
+
+    const name = profile?.name ?? 'Christian Ramade'
 
     const linkedArticle =
         series.linkedTicket && series.linkedTicket.status === 'published'
@@ -34,7 +42,10 @@ export default async function GalerieDetailPage({
             : null
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="flex min-h-screen flex-col bg-white pt-20">
+            <Navbar name={name} active="archives" />
+
+            <main className="flex-1">
             <div className="mx-auto max-w-7xl px-6 py-16">
                 {/* Retour */}
                 <Link
@@ -42,7 +53,7 @@ export default async function GalerieDetailPage({
                     className="mb-8 inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900"
                 >
                     <ChevronLeft className="h-4 w-4" />
-                    Retour à l'accueil
+                    Retour à la galerie
                 </Link>
 
                 {/* En-tête */}
@@ -51,9 +62,7 @@ export default async function GalerieDetailPage({
                         {series.name}
                     </h1>
                     {series.description && (
-                        <p className="mt-3 max-w-2xl text-lg leading-relaxed text-gray-500">
-                            {series.description}
-                        </p>
+                        <SeriesDescription text={series.description} />
                     )}
 
                    
@@ -98,6 +107,9 @@ export default async function GalerieDetailPage({
                 {/* Bouton vers l'article lié */}
                 
             </div>
+            </main>
+
+            <Footer name={name} />
         </div>
     )
 }

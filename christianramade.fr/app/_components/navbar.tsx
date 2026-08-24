@@ -4,7 +4,7 @@ export function Navbar({ name, active }: { name: string; active?: string }) {
   const navLinks = [
     { label: 'Accueil', href: '/', key: 'accueil' },
     { label: 'Bio', href: '/bio', key: 'bio' },
-    { label: 'Archives', href: '/archives', key: 'archives' },
+    { label: 'Galeries', href: '/archives', key: 'archives' },
     { label: 'Blog', href: '/journal', key: 'journal' },
   ]
 
