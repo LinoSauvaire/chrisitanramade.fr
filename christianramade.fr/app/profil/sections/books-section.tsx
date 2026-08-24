@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition, useEffect } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Plus, X, Upload, Loader2, BookOpen, GripVertical, Check } from 'lucide-react'
 import { addBook, deleteBook, reorderBooks } from '../actions'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
@@ -19,6 +20,7 @@ type Book = {
 }
 
 export function BooksSection({ books }: { books: Book[] }) {
+    const router = useRouter()
     const [state, formAction, isPending] = useActionState(addBook, undefined)
     const [showModal, setShowModal] = useState(false)
     const [coverPreview, setCoverPreview] = useState<string | null>(null)
@@ -36,6 +38,14 @@ export function BooksSection({ books }: { books: Book[] }) {
         setOrderChanged(false)
     }, [books])
 
+    // Ferme la modal quand l'ajout réussit
+    useEffect(() => {
+        if (!isPending && state && !state.error) {
+            handleClose()
+            router.refresh()
+        }
+    }, [isPending, state, router])
+
     function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0]
         if (file) {
@@ -47,7 +57,9 @@ export function BooksSection({ books }: { books: Book[] }) {
         if (!deleteTarget) return
         startTransition(async () => {
             await deleteBook(deleteTarget.id)
+            setLocalBooks((prev) => prev.filter((b) => b.id !== deleteTarget.id))
             setDeleteTarget(null)
+            router.refresh()
         })
     }
 

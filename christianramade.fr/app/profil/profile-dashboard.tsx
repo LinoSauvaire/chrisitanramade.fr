@@ -7,11 +7,11 @@ import {
     User,
     Home as HomeIcon,
     LogOut,
+    BookOpen,
 } from 'lucide-react'
 import { logout } from './actions'
 import { PresentationSection } from './sections/presentation-section'
 import { TimelineSection } from './sections/timeline-section'
-import { BooksSection } from './sections/books-section'
 
 type TimelineItem = {
     id: string
@@ -22,17 +22,6 @@ type TimelineItem = {
     order: number
 }
 
-type Book = {
-    id: string
-    title: string
-    publisher: string | null
-    year: string | null
-    description: string | null
-    coverUrl: string | null
-    coverKey: string | null
-    order: number
-}
-
 type Profile = {
     id: string
     name: string
@@ -40,13 +29,13 @@ type Profile = {
     bio: string
     avatarUrl: string | null
     timeline: TimelineItem[]
-    books: Book[]
 }
 
 const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: false },
     { label: 'Tickets', icon: TicketIcon, href: '/ticket', active: false },
     { label: 'Profil', icon: User, href: '/profil', active: true },
+    { label: 'Livres', icon: BookOpen, href: '/config/livres', active: false },
     { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: false },
 ]
 
@@ -118,8 +107,6 @@ export function ProfileDashboard({ profile }: { profile: Profile }) {
                         />
 
                         <TimelineSection items={profile.timeline} />
-
-                        <BooksSection books={profile.books} />
                     </div>
                 </main>
             </div>

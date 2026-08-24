@@ -35,15 +35,6 @@ export default async function ProfilPage() {
             description: t.description ?? null,
             location: t.location ?? null,
         })),
-        books: (profile.books ?? []).map((b) => ({
-            ...b,
-            title: b.title ?? '',
-            publisher: b.publisher ?? null,
-            year: b.year ?? null,
-            description: b.description ?? null,
-            coverUrl: b.coverUrl ?? null,
-            coverKey: b.coverKey ?? null,
-        })),
     }
 
     return <ProfileDashboard profile={normalizedProfile} />

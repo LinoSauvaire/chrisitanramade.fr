@@ -14,6 +14,7 @@ import {
     Loader2,
     Trash2,
     X,
+    BookOpen,
 } from 'lucide-react'
 import {
     logout,
@@ -63,6 +64,7 @@ const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: false },
     { label: 'Tickets', icon: TicketIcon, href: '/ticket', active: false },
     { label: 'Profil', icon: User, href: '/profil', active: false },
+    { label: 'Livres', icon: BookOpen, href: '/config/livres', active: false },
     { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: true },
 ]
 

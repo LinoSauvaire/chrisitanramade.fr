@@ -8,6 +8,7 @@ import {
     Home as HomeIcon,
     ChevronRight,
     LogOut,
+    BookOpen,
 } from 'lucide-react'
 import { logout } from '../actions'
 import { PhotoGrid } from './photo-grid'
@@ -48,6 +49,7 @@ const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: true },
     { label: 'Tickets', icon: Ticket, href: '/ticket', active: false },
     { label: 'Profil', icon: User, href: '/profil', active: false },
+    { label: 'Livres', icon: BookOpen, href: '/config/livres', active: false },
     { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: false },
 ]
 

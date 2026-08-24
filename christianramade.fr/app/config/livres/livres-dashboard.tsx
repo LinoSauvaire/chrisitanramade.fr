@@ -1,47 +1,37 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import {
     LayoutGrid,
     Ticket as TicketIcon,
     User,
     Home as HomeIcon,
-    ChevronRight,
     LogOut,
     BookOpen,
 } from 'lucide-react'
-import { logout } from '../actions'
-import { RichTextEditor } from './rich-text-editor'
-import { TicketSettingsPanel } from './settings-panel'
+import { logout } from '@/app/profil/actions'
+import { BooksSection } from '@/app/profil/sections/books-section'
 
-type Ticket = {
+type Book = {
     id: string
     title: string
-    slug: string
-    content: string
-    excerpt: string | null
+    publisher: string | null
+    year: string | null
+    description: string | null
     coverUrl: string | null
     coverKey: string | null
-    status: string
-    tags: string[]
     order: number
-    createdAt: Date
-    updatedAt: Date
 }
 
 const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: false },
-    { label: 'Tickets', icon: TicketIcon, href: '/ticket', active: true },
+    { label: 'Tickets', icon: TicketIcon, href: '/ticket', active: false },
     { label: 'Profil', icon: User, href: '/profil', active: false },
-    { label: 'Livres', icon: BookOpen, href: '/config/livres', active: false },
+    { label: 'Livres', icon: BookOpen, href: '/config/livres', active: true },
     { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: false },
 ]
 
-export function TicketEditor({ ticket }: { ticket: Ticket }) {
-    const [title, setTitle] = useState(ticket.title)
-    const [content, setContent] = useState(ticket.content)
-
+export function LivresDashboard({ books }: { books: Book[] }) {
     return (
         <div className="flex min-h-screen bg-[#FAFAFB]">
             {/* ─────────────────────────── Sidebar gauche ─────────────────────────── */}
@@ -92,35 +82,16 @@ export function TicketEditor({ ticket }: { ticket: Ticket }) {
                 </div>
             </aside>
 
-            {/* ─────────────────────────── Éditeur central ─────────────────────────── */}
-            <div className="flex-1 ml-60 mr-80">
-                <main className="p-10">
-                    {/* Fil d'ariane */}
-                    <nav className="mb-6 flex items-center gap-1.5 text-sm text-gray-400">
-                        <Link href="/ticket" className="hover:text-gray-600">
-                            Mes tickets
-                        </Link>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                        <span className="text-gray-700">Articles</span>
-                    </nav>
+            {/* ─────────────────────────── Contenu central ─────────────────────────── */}
+            <div className="flex-1 ml-60">
+                <main className="max-w-3xl p-10">
+                    <h1 className="mb-8 text-2xl font-bold text-gray-900">
+                        Livres Édités
+                    </h1>
 
-                    {/* Éditeur */}
-                    <RichTextEditor
-                        ticketId={ticket.id}
-                        title={title}
-                        content={content}
-                        onTitleChange={setTitle}
-                        onContentChange={setContent}
-                    />
+                    <BooksSection books={books} />
                 </main>
             </div>
-
-            {/* ─────────────────────────── Panel droite ─────────────────────────── */}
-            <TicketSettingsPanel
-                ticket={ticket}
-                title={title}
-                content={content}
-            />
         </div>
     )
 }

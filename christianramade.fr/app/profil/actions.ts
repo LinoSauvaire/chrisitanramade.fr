@@ -199,6 +199,8 @@ export async function addBook(prevState: { error?: string } | undefined, formDat
     })
 
     revalidatePath('/profil')
+    revalidatePath('/config/livres')
+    revalidatePath('/livres')
     return { error: undefined }
   } catch (err) {
     console.error(err)
@@ -224,6 +226,8 @@ export async function deleteBook(id: string) {
 
     await prisma.book.delete({ where: { id } })
     revalidatePath('/profil')
+    revalidatePath('/config/livres')
+    revalidatePath('/livres')
     revalidatePath('/bio')
     return { error: undefined }
   } catch (err) {
@@ -245,6 +249,8 @@ export async function reorderBooks(bookIds: string[]) {
       ),
     )
     revalidatePath('/profil')
+    revalidatePath('/config/livres')
+    revalidatePath('/livres')
     revalidatePath('/bio')
     return { error: undefined }
   } catch (err) {

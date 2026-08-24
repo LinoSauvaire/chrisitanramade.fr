@@ -16,6 +16,7 @@ import {
     Check,
     Pencil,
     LogOut,
+    BookOpen,
 } from 'lucide-react'
 import { createTicket, deleteTicket, logout } from './actions'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
@@ -39,6 +40,7 @@ const navItems = [
     { label: 'Galeries', icon: LayoutGrid, href: '/config', active: false },
     { label: 'Tickets', icon: TicketIcon, href: '/ticket', active: true },
     { label: 'Profil', icon: User, href: '/profil', active: false },
+    { label: 'Livres', icon: BookOpen, href: '/config/livres', active: false },
     { label: 'Accueil', icon: HomeIcon, href: '/config/accueil', active: false },
 ]
 
