@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { prisma } from '@/app/_lib/prisma'
-import { uploadFileToS3, deleteFileFromS3 } from '@/app/_lib/S3Uploader'
+import { uploadFileToS3, deleteFileFromS3, uploadOptimizedBuffer } from '@/app/_lib/S3Uploader'
+import { generateResponsiveSizes, IMAGE_SIZES } from '@/app/_lib/image-optimizer'
 import { parseSortDateFromLabel } from '@/app/_lib/format-shoot-date'
 
 /**
@@ -284,9 +285,41 @@ export async function uploadPhotos(prevState: { error?: string } | undefined, fo
 
     const uploads = await Promise.all(
       validFiles.map(async (file, i) => {
-        const { url, key } = await uploadFileToS3(file)
+        const buffer = Buffer.from(await file.arrayBuffer())
+
+        // Optimise l'image : redimensionne + convertit en WebP
+        const sizes = await generateResponsiveSizes(buffer)
+
+        // Clé de base partagée par toutes les variantes
+        const baseKey = `uploads/${Date.now()}-${file.name
+          .replace(/[^a-zA-Z0-9._-]/g, '-')
+          .replace(/\.[^.]+$/, '')}`
+
+        // Upload de toutes les variantes en parallèle
+        const uploaded = await Promise.all(
+          sizes.map((s) =>
+            uploadOptimizedBuffer(s.buffer, baseKey, s.suffix, 'image/webp'),
+          ),
+        )
+
+        // La version "full" est la référence principale
+        const full = uploaded.find((u) => u.key.endsWith('-full.webp')) ?? uploaded[0]
+
+        const variants = IMAGE_SIZES.map((size, idx) => ({
+          suffix: size.suffix,
+          width: size.width,
+          url: uploaded[idx].url,
+          key: uploaded[idx].key,
+        }))
+
         return prisma.photo.create({
-          data: { url, key, seriesId, order: startOrder + i },
+          data: {
+            url: full.url,
+            key: full.key,
+            seriesId,
+            order: startOrder + i,
+            variants,
+          },
         })
       }),
     )
@@ -381,5 +414,35 @@ export async function setCoverPhoto(photoId: string) {
   } catch (err) {
     console.error(err)
     return { error: 'Erreur lors de la définition de la couverture.' }
+  }
+}
+
+/**
+ * Met à jour la légende (titre) et l'année d'une photo.
+ */
+export async function updatePhotoCaption(photoId: string, caption: string, year: string) {
+  await requireAuth()
+
+  try {
+    const photo = await prisma.photo.findUnique({
+      where: { id: photoId },
+      include: { series: { select: { slug: true } } },
+    })
+    if (!photo) return { error: 'Photo introuvable.' }
+
+    await prisma.photo.update({
+      where: { id: photoId },
+      data: {
+        caption: caption.trim() || null,
+        year: year.trim() || null,
+      },
+    })
+
+    revalidatePath(`/config/${photo.seriesId}`)
+    revalidatePath(`/galeries/${photo.series.slug}`)
+    return { error: undefined }
+  } catch (err) {
+    console.error(err)
+    return { error: 'Erreur lors de la mise à jour de la légende.' }
   }
 }

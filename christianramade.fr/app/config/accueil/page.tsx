@@ -27,6 +27,7 @@ export default async function AccueilPage() {
         heroImageUrl: homepage.heroImageUrl ?? null,
         heroImageKey: homepage.heroImageKey ?? null,
         heroText: homepage.heroText ?? '',
+        heroSubtitle: homepage.heroSubtitle ?? '',
         presentation: homepage.presentation ?? '',
         manifestoTitle: homepage.manifestoTitle ?? 'La Démarche',
         featuredWorks: (homepage.featuredWorks ?? []).map((w) => ({

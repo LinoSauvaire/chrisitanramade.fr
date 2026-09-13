@@ -18,6 +18,8 @@ type Photo = {
     id: string
     url: string
     key: string
+    caption: string | null
+    year: string | null
     order: number
     seriesId: string
 }

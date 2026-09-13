@@ -3,8 +3,8 @@
 import { useRef, useState, useTransition, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Upload, Trash2, Layers, Loader2, GripVertical } from 'lucide-react'
-import { uploadPhotos, deletePhoto, deleteAllPhotos, setCoverPhoto, reorderPhotos } from '../actions'
+import { Upload, Trash2, Layers, Loader2, GripVertical, Check } from 'lucide-react'
+import { uploadPhotos, deletePhoto, deleteAllPhotos, setCoverPhoto, reorderPhotos, updatePhotoCaption } from '../actions'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
 import { ConfirmDialog } from '@/app/_components/confirm-dialog'
 
@@ -12,6 +12,8 @@ type Photo = {
     id: string
     url: string
     key: string
+    caption: string | null
+    year: string | null
     order: number
     seriesId: string
 }
@@ -283,50 +285,56 @@ export function PhotoGrid({
                 {localPhotos.map((photo) => (
                     <div
                         key={photo.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, photo.id)}
-                        onDragOver={(e) => handleDragOver(e, photo.id)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, photo.id)}
-                        onDragEnd={handleDragEnd}
-                        className={`group relative aspect-square cursor-grab overflow-hidden rounded-xl border bg-gray-100 transition-all active:cursor-grabbing ${
-                            draggedId === photo.id
-                                ? 'opacity-40 ring-2 ring-indigo-400'
-                                : dragOverId === photo.id
-                                  ? 'ring-2 ring-indigo-300 border-indigo-200'
-                                  : 'border-gray-100'
-                        }`}
+                        className="group relative flex flex-col gap-2"
                     >
-                        <Image
-                            src={s3UrlToProxy(photo.url) ?? photo.url}
-                            alt=""
-                            fill
-                            className="pointer-events-none object-cover"
-                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        />
+                        <div
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, photo.id)}
+                            onDragOver={(e) => handleDragOver(e, photo.id)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, photo.id)}
+                            onDragEnd={handleDragEnd}
+                            className={`relative aspect-square cursor-grab overflow-hidden rounded-xl border bg-gray-100 transition-all active:cursor-grabbing ${
+                                draggedId === photo.id
+                                    ? 'opacity-40 ring-2 ring-indigo-400'
+                                    : dragOverId === photo.id
+                                      ? 'ring-2 ring-indigo-300 border-indigo-200'
+                                      : 'border-gray-100'
+                            }`}
+                        >
+                            <Image
+                                src={s3UrlToProxy(photo.url) ?? photo.url}
+                                alt=""
+                                fill
+                                className="pointer-events-none object-cover"
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                            />
 
-                        {/* Poignée de glissement */}
-                        <div className="absolute left-1.5 top-1.5 flex items-center justify-center rounded-lg bg-black/40 p-1 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
-                            <GripVertical className="h-3.5 w-3.5 text-white" />
+                            {/* Poignée de glissement */}
+                            <div className="absolute left-1.5 top-1.5 flex items-center justify-center rounded-lg bg-black/40 p-1 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                                <GripVertical className="h-3.5 w-3.5 text-white" />
+                            </div>
+
+                            {/* Contrôles au survol */}
+                            <div className="absolute inset-0 flex items-start justify-end gap-1.5 bg-black/0 p-2 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
+                                <button
+                                    onClick={() => handleSetCover(photo.id)}
+                                    title="Définir comme couverture"
+                                    className="rounded-lg bg-white/90 p-1.5 text-gray-700 shadow-sm transition-colors hover:bg-white hover:text-indigo-600"
+                                >
+                                    <Layers className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                    onClick={() => setDeleteTarget(photo)}
+                                    title="Supprimer"
+                                    className="rounded-lg bg-white/90 p-1.5 text-gray-700 shadow-sm transition-colors hover:bg-white hover:text-red-600"
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Contrôles au survol */}
-                        <div className="absolute inset-0 flex items-start justify-end gap-1.5 bg-black/0 p-2 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
-                            <button
-                                onClick={() => handleSetCover(photo.id)}
-                                title="Définir comme couverture"
-                                className="rounded-lg bg-white/90 p-1.5 text-gray-700 shadow-sm transition-colors hover:bg-white hover:text-indigo-600"
-                            >
-                                <Layers className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                                onClick={() => setDeleteTarget(photo)}
-                                title="Supprimer"
-                                className="rounded-lg bg-white/90 p-1.5 text-gray-700 shadow-sm transition-colors hover:bg-white hover:text-red-600"
-                            >
-                                <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                        </div>
+                        <CaptionEditor photo={photo} />
                     </div>
                 ))}
             </div>
@@ -356,6 +364,87 @@ export function PhotoGrid({
                 onConfirm={handleDeleteAll}
                 onCancel={() => setConfirmDeleteAll(false)}
             />
+        </div>
+    )
+}
+
+/**
+ * Éditeur de légende : titre + année, sauvegardés automatiquement à la sortie du champ.
+ */
+function CaptionEditor({ photo }: { photo: Photo }) {
+    const router = useRouter()
+    const [caption, setCaption] = useState(photo.caption ?? '')
+    const [year, setYear] = useState(photo.year ?? '')
+    const [saving, setSaving] = useState(false)
+    const [saved, setSaved] = useState(false)
+
+    // Resynchronise quand la prop change (après router.refresh)
+    useEffect(() => {
+        setCaption(photo.caption ?? '')
+        setYear(photo.year ?? '')
+    }, [photo.caption, photo.year])
+
+    const changed =
+        caption.trim() !== (photo.caption ?? '') ||
+        year.trim() !== (photo.year ?? '')
+
+    async function handleSave() {
+        if (!changed) return
+        setSaving(true)
+        setSaved(false)
+        try {
+            const result = await updatePhotoCaption(photo.id, caption, year)
+            if (result?.error) {
+                console.error(result.error)
+            } else {
+                setSaved(true)
+                setTimeout(() => setSaved(false), 1500)
+            }
+            router.refresh()
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5">
+                <input
+                    type="text"
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    onBlur={handleSave}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.currentTarget.blur()
+                        }
+                    }}
+                    placeholder="Titre de la photo"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-900 placeholder:text-gray-300 focus:border-indigo-300 focus:outline-none"
+                />
+                <input
+                    type="text"
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                    onBlur={handleSave}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.currentTarget.blur()
+                        }
+                    }}
+                    placeholder="Année"
+                    className="w-16 shrink-0 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-center text-xs text-gray-900 placeholder:text-gray-300 focus:border-indigo-300 focus:outline-none"
+                />
+            </div>
+            <div className="flex h-4 items-center justify-end">
+                {saving ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-indigo-500" />
+                ) : saved ? (
+                    <span className="flex items-center gap-1 text-[10px] text-green-600">
+                        <Check className="h-3 w-3" /> Enregistré
+                    </span>
+                ) : null}
+            </div>
         </div>
     )
 }

@@ -8,6 +8,8 @@ type LightboxPhoto = {
   id: string
   url: string
   alt: string
+  caption?: string | null
+  year?: string | null
 }
 
 export function Lightbox({
@@ -46,7 +48,7 @@ export function Lightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black"
       onClick={onClose}
     >
       {/* Bouton fermer */}
@@ -95,9 +97,24 @@ export function Lightbox({
         </button>
       )}
 
-      {/* Compteur */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-white/80">
-        {currentIndex + 1} / {photos.length}
+      {/* Légende + compteur */}
+      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col items-center gap-1.5">
+        {(photo.caption || photo.year) && (
+          <div className="rounded-full bg-black/60 px-5 py-2 text-center">
+            {photo.caption && (
+              <span className="text-sm text-white/90">{photo.caption}</span>
+            )}
+            {photo.caption && photo.year && (
+              <span className="mx-1.5 text-white/40">·</span>
+            )}
+            {photo.year && (
+              <span className="text-sm text-white/60">{photo.year}</span>
+            )}
+          </div>
+        )}
+        <div className="rounded-full bg-white/10 px-4 py-1.5 text-sm text-white/80">
+          {currentIndex + 1} / {photos.length}
+        </div>
       </div>
     </div>
   )

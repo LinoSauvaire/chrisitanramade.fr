@@ -73,6 +73,7 @@ export async function updateHero(prevState: { error?: string } | undefined, form
   try {
     const homepage = await getOrCreateHomepage()
     const heroText = String(formData.get('heroText') ?? '').trim()
+    const heroSubtitle = String(formData.get('heroSubtitle') ?? '').trim()
 
     const file = formData.get('heroImage') as File | null
     let heroImageUrl: string | undefined
@@ -92,6 +93,7 @@ export async function updateHero(prevState: { error?: string } | undefined, form
       where: { id: homepage.id },
       data: {
         heroText,
+        heroSubtitle,
         ...(heroImageUrl ? { heroImageUrl, heroImageKey } : {}),
       },
     })

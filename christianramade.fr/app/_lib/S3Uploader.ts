@@ -4,6 +4,7 @@ import {
   DeleteObjectCommand,
   HeadBucketCommand,
   CreateBucketCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3"
 
 const REGION = process.env.S3_REGION ?? "eu-west-3"
@@ -75,6 +76,32 @@ export async function uploadFileToS3(
 }
 
 /**
+ * Upload un buffer optimisé vers S3 avec une clé dérivée du nom de base.
+ * Ex : `uploads/1234567890-photo.webp` et `uploads/1234567890-photo-small.webp`.
+ */
+export async function uploadOptimizedBuffer(
+  buffer: Buffer,
+  baseKey: string,
+  suffix: string,
+  contentType: string,
+): Promise<{ url: string; key: string }> {
+  const client = getS3Client()
+  const key = `${baseKey}${suffix ? `-${suffix}` : ""}.webp`
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: buffer,
+      ContentType: contentType,
+    }),
+  )
+
+  const url = `https://${BUCKET_NAME}.s3.${REGION}.amazonaws.com/${key}`
+  return { url, key }
+}
+
+/**
  * Supprime un objet de S3 via sa clé.
  */
 export async function deleteFileFromS3(key: string): Promise<void> {
@@ -85,4 +112,21 @@ export async function deleteFileFromS3(key: string): Promise<void> {
       Key: key,
     }),
   )
+}
+
+/**
+ * Télécharge un objet S3 et retourne son buffer + content-type.
+ */
+export async function downloadFileFromS3(
+  key: string,
+): Promise<{ buffer: Buffer; contentType: string }> {
+  const client = getS3Client()
+  const response = await client.send(
+    new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key }),
+  )
+  const bytes = await response.Body!.transformToByteArray()
+  return {
+    buffer: Buffer.from(bytes),
+    contentType: response.ContentType ?? "image/jpeg",
+  }
 }

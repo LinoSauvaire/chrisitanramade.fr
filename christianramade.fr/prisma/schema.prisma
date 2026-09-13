@@ -40,6 +40,9 @@ model Photo {
   id        String   @id @default(cuid())
   url       String
   key       String
+  caption   String?
+  year      String?
+  variants  Json?
   order     Int      @default(0)
   seriesId  String
   series    Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
@@ -128,6 +131,7 @@ model Homepage {
   heroImageUrl  String?
   heroImageKey  String?
   heroText      String   @default("")
+  heroSubtitle  String   @default("")
   presentation  String   @default("")
   manifestoTitle String  @default("La Démarche")
   createdAt     DateTime @default(now())

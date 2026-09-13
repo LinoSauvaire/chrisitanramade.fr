@@ -8,6 +8,8 @@ import { s3UrlToProxy } from '@/app/_lib/s3-url'
 type Photo = {
   id: string
   url: string
+  caption: string | null
+  year: string | null
 }
 
 export function GalleryClient({ photos, seriesName }: { photos: Photo[]; seriesName: string }) {
@@ -29,6 +31,8 @@ export function GalleryClient({ photos, seriesName }: { photos: Photo[]; seriesN
     id: p.id,
     url: s3UrlToProxy(p.url) ?? p.url,
     alt: seriesName,
+    caption: p.caption,
+    year: p.year,
   }))
 
   return (
@@ -38,15 +42,27 @@ export function GalleryClient({ photos, seriesName }: { photos: Photo[]; seriesN
           <button
             key={photo.id}
             onClick={() => open(index)}
-            className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100 text-left transition-opacity hover:opacity-90"
+            className="group relative flex flex-col text-left"
           >
-            <Image
-              src={s3UrlToProxy(photo.url) ?? photo.url}
-              alt={seriesName}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            />
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100 transition-opacity group-hover:opacity-90">
+              <Image
+                src={s3UrlToProxy(photo.url) ?? photo.url}
+                alt={seriesName}
+                fill
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              />
+            </div>
+            {(photo.caption || photo.year) && (
+              <div className="mt-2 flex items-baseline gap-2">
+                {photo.caption && (
+                  <span className="text-sm text-gray-900">{photo.caption}</span>
+                )}
+                {photo.year && (
+                  <span className="text-xs text-gray-400">{photo.year}</span>
+                )}
+              </div>
+            )}
           </button>
         ))}
       </div>

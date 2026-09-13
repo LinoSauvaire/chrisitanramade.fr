@@ -41,6 +41,7 @@ export default async function Home() {
     const name = profile?.name ?? 'Christian Ramade'
     const heroImageUrl = homepage?.heroImageUrl ?? null
     const heroText = homepage?.heroText || 'Capturer les moments de calme'
+    const heroSubtitle = homepage?.heroSubtitle || ''
     const manifestoTitle = homepage?.manifestoTitle || 'La Démarche'
     const presentation =
         homepage?.presentation ||
@@ -75,9 +76,11 @@ export default async function Home() {
                             <h1 className="font-serif text-4xl leading-tight text-white lg:text-5xl">
                                 {heroText}
                             </h1>
-                            <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70">
-                                Une approche photographique explorant la relation entre la lumière, l'espace, l'histoire familiale et l'expérience humaine dans le paysage moderne.
-                            </p>
+                            {heroSubtitle && (
+                                <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/70">
+                                    {heroSubtitle}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </section>

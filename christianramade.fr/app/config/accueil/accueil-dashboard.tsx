@@ -53,6 +53,7 @@ type Homepage = {
     heroImageUrl: string | null
     heroImageKey: string | null
     heroText: string
+    heroSubtitle: string
     presentation: string
     manifestoTitle: string
     featuredWorks: FeaturedWork[]
@@ -80,6 +81,7 @@ export function AccueilDashboard({
 
     // ── Photo principale ──
     const [heroText, setHeroText] = useState(homepage.heroText)
+    const [heroSubtitle, setHeroSubtitle] = useState(homepage.heroSubtitle)
     const [heroPreview, setHeroPreview] = useState<string | null>(
         s3UrlToProxy(homepage.heroImageUrl),
     )
@@ -87,6 +89,7 @@ export function AccueilDashboard({
     const [heroSaving, setHeroSaving] = useState(false)
     const [heroImageChanged, setHeroImageChanged] = useState(false)
     const heroTextChanged = heroText !== homepage.heroText
+    const heroSubtitleChanged = heroSubtitle !== homepage.heroSubtitle
 
     // ── Présentation ──
     const [presentation, setPresentation] = useState(homepage.presentation)
@@ -127,6 +130,7 @@ export function AccueilDashboard({
         setHeroError(null)
         const formData = new FormData()
         formData.set('heroText', heroText)
+        formData.set('heroSubtitle', heroSubtitle)
         const fileInput = document.getElementById('hero-image-input') as HTMLInputElement | null
         const file = fileInput?.files?.[0]
         if (file) formData.set('heroImage', file)
@@ -147,6 +151,7 @@ export function AccueilDashboard({
 
     function handleHeroCancel() {
         setHeroText(homepage.heroText)
+        setHeroSubtitle(homepage.heroSubtitle)
         setHeroPreview(s3UrlToProxy(homepage.heroImageUrl))
         setHeroImageChanged(false)
         setHeroError(null)
@@ -229,7 +234,7 @@ export function AccueilDashboard({
 
     const worksCount = localWorks.length
     const worksFull = worksCount >= MAX_FEATURED_WORKS
-    const heroChanged = heroTextChanged || heroImageChanged
+    const heroChanged = heroTextChanged || heroSubtitleChanged || heroImageChanged
 
     return (
         <div className="flex min-h-screen bg-[#FAFAFB]">
@@ -337,6 +342,19 @@ export function AccueilDashboard({
                                         onChange={(e) => setHeroText(e.target.value)}
                                         placeholder="Ex: Capturer les moments de calme"
                                         className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                    />
+                                </div>
+
+                                <div className="mt-4">
+                                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                        Sous-titre (texte sous le titre)
+                                    </label>
+                                    <textarea
+                                        value={heroSubtitle}
+                                        onChange={(e) => setHeroSubtitle(e.target.value)}
+                                        rows={3}
+                                        placeholder="Ex: Une approche photographique explorant la relation entre la lumière, l'espace et l'expérience humaine…"
+                                        className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed text-gray-700 placeholder:text-gray-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                                     />
                                 </div>
 
