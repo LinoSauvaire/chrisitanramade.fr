@@ -57,8 +57,8 @@ RUN adduser --system --uid 1001 nextjs
 USER nextjs
 
 # Port interne uniquement (jamais exposé directement sur Internet)
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=3004
+EXPOSE 3004
 
 # Démarre l'application : applique les migrations versionnées (idempotent),
 # puis lance Next.js en production.
