@@ -177,7 +177,24 @@ certbot renew
 
 ---
 
-## 9. Procédure de diagnostic
+## 9. Scripts d'administration (migrations de données, etc.)
+
+Les scripts qui accèdent à la base (ex. `npm run migrate:photos`) doivent
+être exécutés **à l'intérieur du conteneur** `christianramade-app`, car
+PostgreSQL n'est accessible que via le réseau Docker interne (hôte `db`).
+Les lancer directement sur le VPS échoue avec `ECONNREFUSED`.
+
+```bash
+# Depuis le VPS — exécute le script dans le conteneur (DATABASE_URL y est défini)
+docker exec -it christianramade-app npm run migrate:photos
+```
+
+> ⚠️ Ne pas lancer `npm run migrate:photos` directement dans le shell du VPS :
+> l'hôte `db` n'y est pas résolvable et `DATABASE_URL` n'y est pas défini.
+
+---
+
+## 10. Procédure de diagnostic
 
 - **Le conteneur app ne démarre pas** : consultez les logs
   (`docker logs christianramade-app`). Vérifiez que `DATABASE_URL` pointe
@@ -192,7 +209,7 @@ certbot renew
 
 ---
 
-## 10. Sécurité obligatoire
+## 11. Sécurité obligatoire
 
 1. Remplacer les identifiants PostgreSQL visibles dans l'historique Git.
 2. Révoquer et régénérer les clés S3 si elles ont été commitées.
