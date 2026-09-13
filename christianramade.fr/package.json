@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "migrate": "prisma migrate deploy",
-    "migrate:photos": "tsx scripts/migrate-photos.mts",
+    "migrate:photos": "prisma generate && tsx scripts/migrate-photos.mts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
