@@ -47,6 +47,10 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 # Client Prisma généré (nécessaire aux scripts tsx comme migrate:photos)
 COPY --from=build /app/app/generated ./app/generated
+# Modules partagés utilisés par les scripts d'administration (prisma, S3, sharp)
+COPY --from=build /app/app/_lib ./app/_lib
+# Scripts d'administration (migrate:photos, etc.)
+COPY --from=build /app/scripts ./scripts
 
 # Utilisateur non-root pour l'exécution
 RUN adduser --system --uid 1001 nextjs
