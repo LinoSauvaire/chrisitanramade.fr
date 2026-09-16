@@ -9,6 +9,7 @@
     "lint": "eslint",
     "migrate": "prisma migrate deploy",
     "migrate:photos": "tsx scripts/migrate-photos.mts",
+    "seed": "prisma db seed",
     "postinstall": "prisma generate"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "pg-copy-streams": "^7.0.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5"
