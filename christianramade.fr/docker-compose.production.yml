@@ -41,6 +41,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      DATABASE_URL: ${DATABASE_URL}
       S3_REGION: ${S3_REGION}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       S3_PUBLIC_ACCES_KEY: ${S3_PUBLIC_ACCES_KEY}
