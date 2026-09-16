@@ -45,6 +45,8 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
+# Config Prisma (prisma.config.ts) nécessaire à prisma migrate deploy
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 # Client Prisma généré (nécessaire aux scripts tsx comme migrate:photos)
 COPY --from=build /app/app/generated ./app/generated
 # Modules partagés utilisés par les scripts d'administration (prisma, S3, sharp)
