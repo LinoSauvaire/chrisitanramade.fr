@@ -112,7 +112,7 @@ export default async function Home() {
                             href="/archives"
                             className="text-xs uppercase tracking-widest text-gray-400 transition-colors hover:text-gray-900"
                         >
-                            Voir la galeries
+                            Voir la galerie
                         </Link>
                     </div>
 
@@ -226,7 +226,7 @@ export default async function Home() {
                     <div className="mt-16 text-center">
                         <Link
                             href="/archives"
-                            className="inline-block border border-gray-300 px-10 py-3.5 text-xs uppercase tracking-widest text-gray-900 transition-colors hover:bg-gray-900 hover:text-white"
+                            className="inline-block border border-gray-300 px-14 py-5 text-sm uppercase tracking-widest text-gray-900 transition-colors hover:bg-gray-900 hover:text-white"
                         >
                             Voir le portfolio complet
                         </Link>

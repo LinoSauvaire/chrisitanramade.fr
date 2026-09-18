@@ -134,13 +134,13 @@ export function BooksSection({ books }: { books: Book[] }) {
                         </div>
 
                         {/* Couverture */}
-                        <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                        <div className="relative flex h-24 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
                             {book.coverUrl ? (
                                 <Image
                                     src={s3UrlToProxy(book.coverUrl) ?? book.coverUrl}
                                     alt={book.title}
                                     fill
-                                    className="object-cover"
+                                    className="object-contain p-1"
                                     sizes="64px"
                                 />
                             ) : (
