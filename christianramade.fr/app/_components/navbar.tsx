@@ -6,6 +6,7 @@ import { ContactModal } from './contact-modal'
 
 export function Navbar({ name, active }: { name: string; active?: string }) {
   const [contactOpen, setContactOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const navLinks = [
     { label: 'Accueil', href: '/', key: 'accueil' },
@@ -54,12 +55,51 @@ export function Navbar({ name, active }: { name: string; active?: string }) {
           </ul>
 
           {/* Menu mobile */}
-          <button className="sm:hidden">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Ouvrir le menu"
+            aria-expanded={menuOpen}
+            className="sm:hidden"
+          >
             <svg className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
         </nav>
+
+        {/* Panneau mobile */}
+        {menuOpen && (
+          <div className="border-b border-gray-100 bg-white sm:hidden">
+            <ul className="flex flex-col gap-1 px-6 py-4">
+              {navLinks.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`block px-3 py-2.5 text-sm uppercase tracking-widest transition-colors ${
+                      active === link.key
+                        ? 'text-gray-900'
+                        : 'text-gray-400 hover:text-gray-900'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false)
+                    setContactOpen(true)
+                  }}
+                  className="block w-full px-3 py-2.5 text-left text-sm uppercase tracking-widest text-gray-400 transition-colors hover:text-gray-900"
+                >
+                  Contact
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
       </header>
 
       <ContactModal open={contactOpen} onClose={() => setContactOpen(false)} />
