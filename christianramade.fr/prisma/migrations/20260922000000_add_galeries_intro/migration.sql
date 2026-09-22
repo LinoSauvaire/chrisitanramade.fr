@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "homepages" ADD COLUMN     "galeriesIntro" TEXT NOT NULL DEFAULT 'Explorez une collection complète d''études structurelles et de séries d''observation couvrant deux décennies de pratique.';

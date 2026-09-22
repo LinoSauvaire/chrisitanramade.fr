@@ -20,7 +20,7 @@ import {
     Trash2,
     BookOpen,
 } from 'lucide-react'
-import { logout, deleteSeries, reorderSeries } from './actions'
+import { logout, deleteSeries, reorderSeries, updateGaleriesIntro } from './actions'
 import { CreateSeriesForm } from './create-series-form'
 import { ConfirmDialog } from '@/app/_components/confirm-dialog'
 import { s3UrlToProxy } from '@/app/_lib/s3-url'
@@ -52,7 +52,13 @@ function formatDate(date: Date) {
     }).format(new Date(date))
 }
 
-export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
+export function ConfigDashboard({
+    series,
+    galeriesIntro,
+}: {
+    series: SeriesItem[]
+    galeriesIntro: string
+}) {
     const [search, setSearch] = useState('')
     const [showCreateForm, setShowCreateForm] = useState(false)
     const [isPending, startTransition] = useTransition()
@@ -61,6 +67,12 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
     const [dragOverId, setDragOverId] = useState<string | null>(null)
     const [openMenuId, setOpenMenuId] = useState<string | null>(null)
     const [deleteTarget, setDeleteTarget] = useState<SeriesItem | null>(null)
+
+    // ── Introduction des galeries ──
+    const [intro, setIntro] = useState(galeriesIntro)
+    const [introError, setIntroError] = useState<string | null>(null)
+    const [introSaving, setIntroSaving] = useState(false)
+    const introChanged = intro !== galeriesIntro
 
     const filteredSeries = localSeries.filter((s) =>
         s.name.toLowerCase().includes(search.toLowerCase()),
@@ -129,6 +141,31 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
         startTransition(async () => {
             await reorderSeries(orderedIds)
         })
+    }
+
+    // ── Introduction des galeries : save / cancel ──
+    function handleIntroSave() {
+        setIntroSaving(true)
+        setIntroError(null)
+        const formData = new FormData()
+        formData.set('galeriesIntro', intro)
+
+        startTransition(async () => {
+            try {
+                const result = await updateGaleriesIntro(undefined, formData)
+                if (result?.error) setIntroError(result.error)
+                else setIntroError(null)
+            } catch {
+                setIntroError('Erreur lors de la sauvegarde.')
+            } finally {
+                setIntroSaving(false)
+            }
+        })
+    }
+
+    function handleIntroCancel() {
+        setIntro(galeriesIntro)
+        setIntroError(null)
     }
 
     return (
@@ -217,6 +254,50 @@ export function ConfigDashboard({ series }: { series: SeriesItem[] }) {
                         />
                         <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     </div>
+
+                    {/* ── Introduction de la page Galeries ── */}
+                    <section className="mb-8">
+                        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+                            Introduction de la page Galeries
+                        </h2>
+
+                        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                                Texte d'introduction
+                            </label>
+                            <textarea
+                                value={intro}
+                                onChange={(e) => setIntro(e.target.value)}
+                                rows={3}
+                                placeholder="Explorez une collection complète d'études structurelles et de séries d'observation couvrant deux décennies de pratique."
+                                className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed text-gray-700 placeholder:text-gray-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                            />
+
+                            {introError && (
+                                <p className="mt-2 text-sm text-red-500">{introError}</p>
+                            )}
+
+                            <div className="mt-4 flex items-center justify-end gap-3 border-t border-gray-50 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={handleIntroCancel}
+                                    disabled={isPending}
+                                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-400 transition-colors hover:text-gray-600 disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleIntroSave}
+                                    disabled={isPending || !introChanged}
+                                    className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-indigo-600 transition-colors hover:text-indigo-700 disabled:opacity-50"
+                                >
+                                    {introSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </section>
 
                     {/* Grille de cartes */}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

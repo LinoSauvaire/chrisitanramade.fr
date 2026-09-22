@@ -6,16 +6,20 @@ import { ArchivesClient } from './archives-client'
 export const dynamic = 'force-dynamic'
 
 export default async function ArchivesPage() {
-    const [profile, series] = await Promise.all([
+    const [profile, series, homepage] = await Promise.all([
         prisma.profile.findFirst(),
         prisma.series.findMany({
             where: { visibility: 'public' },
             orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
             include: { _count: { select: { photos: true } } },
         }),
+        prisma.homepage.findFirst(),
     ])
 
     const name = profile?.name ?? 'Christian Ramade'
+    const galeriesIntro =
+        homepage?.galeriesIntro ??
+        "Explorez une collection complète d'études structurelles et de séries d'observation couvrant deux décennies de pratique."
 
     return (
         <div className="flex min-h-screen flex-col bg-white pt-20">
@@ -28,7 +32,7 @@ export default async function ArchivesPage() {
                         Galeries
                     </h1>
                     <p className="mt-4 text-base leading-relaxed text-gray-500">
-                        Explorez une collection complète d'études structurelles et de séries d'observation couvrant deux décennies de pratique.
+                        {galeriesIntro}
                     </p>
                 </div>
 

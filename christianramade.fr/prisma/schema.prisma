@@ -134,6 +134,7 @@ model Homepage {
   heroSubtitle  String   @default("")
   presentation  String   @default("")
   manifestoTitle String  @default("La Démarche")
+  galeriesIntro String   @default("Explorez une collection complète d'études structurelles et de séries d'observation couvrant deux décennies de pratique.")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

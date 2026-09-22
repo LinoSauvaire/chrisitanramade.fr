@@ -450,3 +450,51 @@ export async function updatePhotoCaption(photoId: string, caption: string, year:
     return { error: 'Erreur lors de la mise à jour de la légende.' }
   }
 }
+
+// ─────────────────────────── Galeries (intro) ───────────────────────────
+
+/**
+ * Récupère ou crée la page d'accueil (singleton) pour stocker l'intro des galeries.
+ */
+async function getOrCreateHomepage() {
+  let homepage = await prisma.homepage.findFirst()
+  if (!homepage) {
+    homepage = await prisma.homepage.create({ data: {} })
+  }
+  return homepage
+}
+
+/**
+ * Récupère le texte d'introduction de la page Galeries.
+ */
+export async function getGaleriesIntro() {
+  const homepage = await getOrCreateHomepage()
+  return homepage.galeriesIntro
+}
+
+/**
+ * Met à jour le texte d'introduction de la page Galeries.
+ */
+export async function updateGaleriesIntro(
+  prevState: { error?: string } | undefined,
+  formData: FormData,
+) {
+  await requireAuth()
+
+  try {
+    const homepage = await getOrCreateHomepage()
+    const galeriesIntro = String(formData.get('galeriesIntro') ?? '').trim()
+
+    await prisma.homepage.update({
+      where: { id: homepage.id },
+      data: { galeriesIntro },
+    })
+
+    revalidatePath('/config')
+    revalidatePath('/archives')
+    return { error: undefined }
+  } catch (err) {
+    console.error(err)
+    return { error: 'Erreur lors de la mise à jour de l\'introduction des galeries.' }
+  }
+}

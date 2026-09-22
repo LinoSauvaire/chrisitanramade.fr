@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
 import { PasswordForm } from './password-form'
 import { ConfigDashboard } from './config-dashboard'
-import { getSeries } from './actions'
+import { getSeries, getGaleriesIntro } from './actions'
 
 export const metadata: Metadata = {
     title: 'Christian Ramade — Atelier',
@@ -31,7 +31,7 @@ export default async function ConfigPage() {
     }
 
     // Utilisateur authentifié : récupérer les séries et afficher le dashboard
-    const series = await getSeries()
+    const [series, galeriesIntro] = await Promise.all([getSeries(), getGaleriesIntro()])
 
-    return <ConfigDashboard series={series} />
+    return <ConfigDashboard series={series} galeriesIntro={galeriesIntro} />
 }
