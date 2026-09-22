@@ -41,6 +41,17 @@ export function PhotoGrid({
         setLocalPhotos(photos)
     }, [photos])
 
+    // Construit un message d'erreur lisible pour l'utilisateur, en remontant
+    // le digest fourni par Next quand l'erreur est côté re-rendu RSC.
+    function extractDisplayError(e: unknown): string {
+        if (e instanceof Error) {
+            const digest = (e as unknown as { digest?: string }).digest
+            if (digest) return `Erreur serveur (digest ${digest}).`
+            return e.message
+        }
+        return String(e)
+    }
+
     function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
         const files = e.target.files
         if (!files || files.length === 0) return
@@ -58,11 +69,10 @@ export function PhotoGrid({
                 else setError(null)
                 router.refresh()
             } catch (e) {
-                const reason = e instanceof Error ? e.message : String(e)
                 console.error('Upload échoué (client) :', e)
                 setError(
-                    'Erreur réseau lors de l\'upload. Détail : ' + reason +
-                    ' — Vérifiez la taille des photos et les limites du serveur (nginx `client_max_body_size` et Next.js `serverActions.bodySizeLimit`).',
+                    'Erreur lors de l\'upload. ' + extractDisplayError(e) +
+                    ' — Vérifiez la console serveur (docker logs) en rapprochant le digest ci-dessus.',
                 )
             }
         })
@@ -188,11 +198,10 @@ export function PhotoGrid({
                 else setError(null)
                 router.refresh()
             } catch (e) {
-                const reason = e instanceof Error ? e.message : String(e)
                 console.error('Upload échoué (client) :', e)
                 setError(
-                    'Erreur réseau lors de l\'upload. Détail : ' + reason +
-                    ' — Vérifiez la taille des photos et les limites du serveur (nginx `client_max_body_size` et Next.js `serverActions.bodySizeLimit`).',
+                    'Erreur lors de l\'upload. ' + extractDisplayError(e) +
+                    ' — Vérifiez la console serveur (docker logs) en rapprochant le digest ci-dessus.',
                 )
             }
         })
