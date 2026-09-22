@@ -42,6 +42,51 @@ Internet ──► nginx (443/80) ──► Next.js (127.0.0.1:3000) ──► P
 
 ---
 
+## 2bis. nginx : limite d'upload obligatoire (⚠️ CRITIQUE)
+
+Le reverse proxy nginx a une limite de corps de requête **par défaut de 1 Mo**
+(`client_max_body_size 1m`). Or l'application accepte des uploads allant jusqu'à
+**200 Mo** (`serverActions.bodySizeLimit` dans `next.config.ts`).
+
+**Symptôme** : en production, tout upload de photo échoue avec le message
+« Erreur lors de l'upload. Photos trop lourdes ou problème réseau. » alors que
+le même upload fonctionne en local (`next dev`, pas de nginx).
+
+**Cause** : nginx renvoie `413 Request Entity Too Large` avant que la requête
+n'atteigne Next.js.
+
+**Correctif** : définir `client_max_body_size` ≥ la limite Next.js dans la
+config nginx. Une config de référence est versionnée dans
+`deploy/nginx/christianramade.conf.example`.
+
+> ℹ️ **Next.js 16 ajoute une 2e limite** : `experimental.proxyClientMaxBodySize`
+> (par défaut **10 Mo**). Le proxy interne de Next bufferise le corps de la
+> requête ; au-delà de 10 Mo il tronque le corps. Pour les gros uploads, il est
+> donc nécessaire de l'augmenter aussi (mis à `200mb` dans `next.config.ts`).
+> Sans lui, l'action peut recevoir un corps tronqué et échouer malgré la limite
+> `serverActions.bodySizeLimit` et nginx correctement configurés.
+
+```nginx
+# Dans un context http{} ou server{}
+client_max_body_size 200m;
+```
+
+Sur le VPS :
+
+```bash
+sudo nano /etc/nginx/sites-available/christianramade.fr
+# ajouter : client_max_body_size 200m; (dans server{} ou http{})
+sudo nginx -t            # vérifie la syntaxe
+sudo systemctl reload nginx
+```
+
+📌 Vérifiez que le reverse proxy pointe le bon port du conteneur.
+Le `docker-compose.production.yml` publie le conteneur sur
+`127.0.0.1:3004` (et non `3000`) — nginx doit donc utiliser
+`proxy_pass http://127.0.0.1:3004;`.
+
+---
+
 ## 2. Création du fichier `.env.production` (uniquement sur le VPS)
 
 Ce fichier **ne doit jamais** être versionné ni envoyé sur GitHub.
@@ -199,6 +244,9 @@ docker exec -it christianramade-app npm run migrate:photos
 - **Le conteneur app ne démarre pas** : consultez les logs
   (`docker logs christianramade-app`). Vérifiez que `DATABASE_URL` pointe
   vers `db` (réseau interne) et que PostgreSQL est sain.
+- **L'upload de photo échoue en prod** (mais fonctionne en local) : presque
+  toujours la limite `client_max_body_size` de nginx (1 Mo par défaut) bloquant
+  la requête en `413`. Voir section 2bis.
 - **Images S3 non affichées** : vérifiez `S3_REGION`, `S3_BUCKET_NAME` et
   les permissions IAM. Si le bucket est privé, les URLs publiques ne
   fonctionneront pas — utilisez des URLs signées.

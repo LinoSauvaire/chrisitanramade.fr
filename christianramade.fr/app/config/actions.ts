@@ -338,8 +338,12 @@ export async function uploadPhotos(prevState: { error?: string } | undefined, fo
     revalidatePath('/')
     return { error: undefined }
   } catch (err) {
-    console.error(err)
-    return { error: 'Erreur lors de l\'upload des photos.' }
+    // Log détaillé pour diagnostiquer en production (S3, sharp, auth, timeout…)
+    console.error('[uploadPhotos] Erreur :', err)
+    const reason =
+      err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+    console.error('[uploadPhotos] Détail complet :', err && typeof err === 'object' && 'stack' in err ? (err as Error).stack : reason)
+    return { error: `Erreur lors de l'upload des photos. (${reason})` }
   }
 }
 

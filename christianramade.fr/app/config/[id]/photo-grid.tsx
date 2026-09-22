@@ -57,8 +57,13 @@ export function PhotoGrid({
                 if (result?.error) setError(result.error)
                 else setError(null)
                 router.refresh()
-            } catch {
-                setError('Erreur lors de l\'upload. Photos trop lourdes ou problème réseau.')
+            } catch (e) {
+                const reason = e instanceof Error ? e.message : String(e)
+                console.error('Upload échoué (client) :', e)
+                setError(
+                    'Erreur réseau lors de l\'upload. Détail : ' + reason +
+                    ' — Vérifiez la taille des photos et les limites du serveur (nginx `client_max_body_size` et Next.js `serverActions.bodySizeLimit`).',
+                )
             }
         })
 
@@ -182,8 +187,13 @@ export function PhotoGrid({
                 if (result?.error) setError(result.error)
                 else setError(null)
                 router.refresh()
-            } catch {
-                setError('Erreur lors de l\'upload. Photos trop lourdes ou problème réseau.')
+            } catch (e) {
+                const reason = e instanceof Error ? e.message : String(e)
+                console.error('Upload échoué (client) :', e)
+                setError(
+                    'Erreur réseau lors de l\'upload. Détail : ' + reason +
+                    ' — Vérifiez la taille des photos et les limites du serveur (nginx `client_max_body_size` et Next.js `serverActions.bodySizeLimit`).',
+                )
             }
         })
     }
