@@ -53,6 +53,7 @@ COPY --from=build /app/app/generated ./app/generated
 COPY --from=build /app/app/_lib ./app/_lib
 # Scripts d'administration (migrate:photos, etc.)
 COPY --from=build /app/scripts ./scripts
+COPY --from=build /app/next.config.ts ./next.config.ts
 
 # Utilisateur non-root pour l'exécution
 RUN adduser --system --uid 1001 nextjs
