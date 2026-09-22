@@ -56,6 +56,9 @@ COPY --from=build /app/scripts ./scripts
 
 # Utilisateur non-root pour l'exécution
 RUN adduser --system --uid 1001 nextjs
+
+RUN chown -R nextjs:nextjs /app
+
 USER nextjs
 
 # Port interne uniquement (jamais exposé directement sur Internet)

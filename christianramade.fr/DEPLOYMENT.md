@@ -17,6 +17,27 @@ Internet ──► nginx (443/80) ──► Next.js (127.0.0.1:3000) ──► P
 
 ---
 
+## 0. Conteneur non-root : permissions du cache image (⚠️ CRITIQUE)
+
+Le conteneur tourne en utilisateur non-root (`nextjs`, uid 1001). Next.js
+(Image Optimization) écrit son cache dans `/app/.next/cache/images`. Sans
+permission, le conteneur échoue avec :
+
+```
+Error: EACCES: permission denied, mkdir '/app/.next/cache/images'
+```
+
+Le `Dockerfile` doit donc faire `chown -R nextjs:nextjs /app` **avant** le
+`USER nextjs`. Ceci est déjà en place — ne pas le retirer.
+
+> ⚠️ **Rebuild obligatoire** : les changements de `next.config.ts`
+> (`serverActions.bodySizeLimit`, `proxyClientMaxBodySize`) ne sont pris en
+> compte qu'après un `docker compose ... up -d --build`. Un conteneur relancé
+> sans rebuild continue d'utiliser l'ancien build (limite 1 Mo par défaut →
+> `Body exceeded 1 MB limit`).
+
+---
+
 ## 1. Variables d'environnement requises
 
 | Variable | Rôle |
