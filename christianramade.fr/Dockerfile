@@ -62,7 +62,6 @@ RUN adduser --system --uid 1001 nextjs
 # son cache dans /app/.next/cache/images. Sans chown, le conteneur non-root
 # (uid 1001) échoue avec EACCES. On donne la propriété de /app à nextjs.
 
-RUN chown -R nextjs:nextjs /app
 
 USER nextjs
 
